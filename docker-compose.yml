@@ -1,0 +1,27 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: aurum_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  api:
+    build: .
+    env_file: .env
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    # Use the container's wait-for-db script to ensure Postgres is ready,
+    # then run alembic and start the app.
+    command: ./scripts/wait-for-db.sh
+    volumes:
+      - .:/app
+
+volumes:
+  db_data:

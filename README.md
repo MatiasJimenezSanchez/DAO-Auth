@@ -1,45 +1,135 @@
-# Aurum Auth API
+# Aurum API - FastAPI + PostgreSQL + Docker + Alembic
 
-API de autenticación moderna con FastAPI y JWT. Proyecto refactorizado con arquitectura profesional y modular.
+Sistema robusto de autenticación y gestión de usuarios con FastAPI, SQLAlchemy, JWT, PostgreSQL y migraciones Alembic en Docker.
 
-## 🚀 Características
+## 🎯 Descripción General
 
+**Aurum API** es una API RESTful de producción construida con tecnologías modernas:
+- **FastAPI**: Framework web asincrónico de alto rendimiento
+- **PostgreSQL**: Base de datos relacional robusta en Docker
+- **SQLAlchemy**: ORM para manejo seguro de datos
+- **Alembic**: Versionado y migraciones de BD
+- **JWT**: Autenticación segura con tokens (30 min expiración)
+- **bcrypt**: Hasheado seguro de contraseñas
+- **Docker Compose**: Containerización y orquestación
+
+La API proporciona endpoints profesionales para:
+- ✅ Registro seguro de usuarios
 - ✅ Autenticación con JWT
-- ✅ Sistema de registro de usuarios
-- ✅ Hasheado seguro de contraseñas con bcrypt
-- ✅ Tokens con expiración configurable
-- ✅ CRUD completo de usuarios
-- ✅ Cambio de contraseña
-- ✅ Arquitectura limpia y modular
-- ✅ Documentación automática con Swagger
+- ✅ Acceso a perfil protegido
+- ✅ Persistencia de datos con migraciones versionadas
+- ✅ Swagger/ReDoc automático
 
 ## 📋 Estructura del Proyecto
 
 ```
-app/
-├── api/               # Endpoints y routers
-│   └── v1/
-│       ├── auth.py   # Endpoints de autenticación
-│       └── user.py   # Endpoints de usuario
-├── core/              # Configuración y seguridad
-│   ├── config.py     # Variables de configuración
-│   └── security.py   # Funciones de seguridad
-├── db/                # Base de datos
-│   ├── session.py    # Configuración de sesión
-│   └── base.py       # Base de modelos
-├── models/            # Modelos SQLAlchemy
-│   └── user.py       # Modelo de Usuario
-├── repositories/      # Capa de acceso a datos
-│   └── user_repository.py
-├── schemas/           # Esquemas Pydantic
-│   └── user.py
-└── services/          # Lógica de negocio
-    └── user_service.py
-main.py              # Aplicación principal
-requirements.txt     # Dependencias
+AURUM BACK END/
+│
+├── 📁 app/                          # Código principal de la aplicación
+│   ├── __init__.py
+│   ├── main.py                      # FastAPI app + endpoints raíz
+│   │
+│   ├── core/
+│   │   ├── config.py                # Settings desde .env
+│   │   └── security.py
+│   │
+│   ├── db/
+│   │   ├── base.py                  # SQLAlchemy Base + engine + fallback SQLite
+│   │   └── session.py               # SessionLocal + dependencia get_db
+│   │
+│   ├── models/
+│   │   ├── __init__.py              # Importa y expone User
+│   │   └── user.py                  # Modelo SQLAlchemy User
+│   │
+│   ├── schemas/
+│   │   ├── __init__.py
+│   │   ├── schemas.py               # Base schemas
+│   │   └── user.py                  # Pydantic UserCreate, User, Token
+│   │
+│   ├── api/
+│   │   └── v1/
+│   │       ├── auth.py              # JWT, password hashing, get_current_user
+│   │       └── user.py              # (endpoints adicionales)
+│   │
+│   └── repositories/
+│       └── user_repository.py       # (patrón repository - opcional)
+│
+├── 📁 alembic/                      # Migraciones versionadas
+│   ├── env.py                       # Config: carga .env, target_metadata
+│   ├── script.py.mako               # Template para nuevas migraciones
+│   ├── versions/
+│   │   ├── __init__.py
+│   │   ├── b6ff38f7e173_init_test.py            # Initial (vacío)
+│   │   ├── 1a2b3c4d5e6f_create_users_table.py  # ⭐ Tabla users
+│   │   └── (migraciones aplicadas)
+│   └── alembic.ini                  # Configuración
+│
+├── 📁 scripts/
+│   ├── wait-for-db.sh               # Espera Postgres + ejecuta migraciones
+│   ├── dev.ps1                      # Automation para dev
+│   └── revision.ps1                 # Automation para migraciones
+│
+├── 📄 Dockerfile                    # Python 3.12-slim + dependencies
+├── 📄 docker-compose.yml            # Prod: Postgres + API (sin reload)
+├── 📄 docker-compose.dev.yml        # Dev: API con --reload
+│
+├── 📄 .env                          # Variables (gitignored)
+├── 📄 .env.example                  # Template
+├── 📄 requirements.txt              # Dependencias pip
+├── 📄 README.md                     # Este archivo
+└── 📄 alembic.ini                   # Config Alembic
 ```
 
-## 🛠️ Instalación
+## 🏗️ Arquitectura Técnica
+
+### Flujo de Autenticación
+
+```
+1️⃣  POST /users/             → Crear usuario (email, username, password)
+                                 ↓
+2️⃣  API valida              → Pydantic UserCreate
+                                 ↓
+3️⃣  API hashea pwd          → bcrypt.hashpw()
+                                 ↓
+4️⃣  API inserta en BD       → SQLAlchemy ORM → Postgres
+                                 ↓
+5️⃣  POST /token             → Login (username, password en form-data)
+                                 ↓
+6️⃣  API verifica credenciales → compara hashes
+                                 ↓
+7️⃣  API genera JWT          → jose.jwt.encode() con exp=+30min
+                                 ↓
+8️⃣  GET /users/me           → Bearer token en Authorization header
+                                 ↓
+9️⃣  API valida JWT          → jose.jwt.decode() + get_user()
+                                 ↓
+🔟 API devuelve usuario     → User schema (sin contraseña)
+```
+
+### Stack en Docker
+
+```
+┌──────────────────────────────────────┐
+│     FastAPI (Python 3.12)            │
+│  - Uvicorn: http://0.0.0.0:8000      │
+│  - Endpoints: /users, /token, /docs  │
+│  - Validación: Pydantic              │
+│  - Auth: OAuth2 + JWT (jose)         │
+└──────────────┬───────────────────────┘
+               │ SQLAlchemy (sync)
+               ▼
+┌──────────────────────────────────────┐
+│     PostgreSQL 16                    │
+│  - Host: db:5432                     │
+│  - Database: aurum_db                │
+│  - Tablas: alembic_version, users    │
+│  - Volumen: db_data (persistente)    │
+└──────────────────────────────────────┘
+```
+
+---
+
+## 📦 Requisitos
 
 ### 1. Clonar el repositorio
 

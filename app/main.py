@@ -3,14 +3,14 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
 # Importar primero los modelos para registrarlos
-from app.models import User, Base
 from app import schemas
 from app.api.v1 import auth
 from app.db.base import engine
 from app.db.session import get_db
+from app.models import User
 
-# Crear las tablas DESPUÉS de importar los modelos
-Base.metadata.create_all(bind=engine)
+# Importar modelos para registrar metadatos (no crear tablas aquí)
+import app.models.user  # ensures model classes are imported for Alembic autogenerate
 
 app = FastAPI(
     title="DAO API",
