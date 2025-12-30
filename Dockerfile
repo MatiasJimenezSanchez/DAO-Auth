@@ -2,11 +2,9 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# Install build deps + postgres client tools (pg_isready/psql, postgesql-client)
+# deps para compilar + cliente de postgres (pg_isready)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc \
-    libpq-dev \
-    postgresql-client \
+    gcc libpq-dev postgresql-client \
  && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt ./
