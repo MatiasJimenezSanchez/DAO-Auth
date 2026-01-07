@@ -4,7 +4,7 @@ Servicio para lógica de negocio de usuarios
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from app.repositories.user_repository import UserRepository
-from app.schemas.user import UserCreate, User
+from app.schemas.user import UserCreate, User, UserCreateWithLocation
 from app.core.security import verify_password, hash_password
 
 
@@ -49,6 +49,37 @@ class UserService:
         
         # Crear el usuario
         db_user = self.repository.create_user(user_create)
+        return User.from_orm(db_user)
+
+    def register_full_user(self, user_create: UserCreateWithLocation) -> User:
+        """
+        Registrar un nuevo usuario con ubicación y gamificación
+        
+        Args:
+            user_create: Datos del usuario a registrar con ubicación
+            
+        Returns:
+            Usuario registrado
+            
+        Raises:
+            HTTPException: Si el usuario o email ya existen
+        """
+        # Verificar que el usuario no exista
+        if self.repository.get_user_by_username(user_create.username):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="El usuario ya existe"
+            )
+        
+        # Verificar que el email no esté registrado
+        if user_create.email and self.repository.get_user_by_email(user_create.email):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="El email ya está registrado"
+            )
+        
+        # Crear el usuario con los datos de ubicación y gamificación
+        db_user = self.repository.create_user_with_location(user_create)
         return User.from_orm(db_user)
     
     def authenticate_user(self, username: str, password: str) -> User:

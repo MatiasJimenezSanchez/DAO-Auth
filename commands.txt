@@ -1,0 +1,20 @@
+=== COMANDOS ÚTILES ===
+
+# Acceder a PostgreSQL:
+docker exec -it aurumbackend-db-1 psql -U postgres -d aurum_db
+
+# Ver logs del API:
+docker logs aurumbackend-api-1 -f
+
+# Ejecutar migraciones:
+docker exec aurumbackend-api-1 alembic upgrade head
+
+# Crear nueva migración:
+docker exec aurumbackend-api-1 alembic revision --autogenerate -m "mensaje"
+
+# Ver tablas:
+docker exec aurumbackend-db-1 psql -U postgres -d aurum_db -c "\dt"
+
+# Ver contenido de regions:
+docker exec aurumbackend-db-1 psql -U postgres -d aurum_db -c "SELECT * FROM regions;"
+

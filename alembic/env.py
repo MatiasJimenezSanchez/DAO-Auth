@@ -21,8 +21,10 @@ if DATABASE_URL:
 # Interpret the config file for Python logging.
 fileConfig(config.config_file_name)
 
+# CRÍTICO: Importar Base y TODOS los modelos
 from app.db.base import Base
-import app.models.user  # noqa: F401 (ensure model is imported for autogenerate)
+import app.models.user  # noqa: F401
+import app.models.catalog  # noqa: F401 ← ESTO FALTABA
 
 target_metadata = Base.metadata
 

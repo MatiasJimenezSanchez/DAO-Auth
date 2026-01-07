@@ -1,42 +1,52 @@
+# app/main.py - VERSIÓN SIN Token
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
 
-# Importar primero los modelos para registrarlos
-from app import schemas
+# Imports simplificados
+from app.schemas.user import UserCreate, UserOut
+from app.schemas.catalog import RegionOut, ProvinceOut, CityOut
+
 from app.api.v1 import auth
-from app.db.base import engine
-from app.db.session import get_db
-from app.models import User
+from app.api.v1 import catalogs
 
-# Importar modelos para registrar metadatos (no crear tablas aquí)
-import app.models.user  # ensures model classes are imported for Alembic autogenerate
+from app.db.session import get_db
+from app.models.user import User as UserModel
+
+import app.models.user
+import app.models.catalog
+
+# Definir Token aquí directamente
+class Token(BaseModel):
+    access_token: str
+    token_type: str
 
 app = FastAPI(
-    title="DAO API",
-    description="API de autenticación con FastAPI y JWT",
+    title="Aurum API",
+    description="API de autenticación y catálogos geográficos",
     version="1.0.0"
 )
 
-
 @app.get("/")
 def root():
-    """Endpoint raíz - Verificar que la API está funcionando"""
-    return {
-        "message": "Bienvenido a Aurum API",
-        "status": "online",
-        "docs": "/docs"
-    }
+    return {"message": "Bienvenido a Aurum API", "status": "online", "docs": "/docs"}
 
+@app.get("/health")
+def health():
+    return {"status": "healthy"}
 
-@app.post("/users/", response_model=schemas.User, status_code=status.HTTP_201_CREATED)
-def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    """Endpoint para registrar un nuevo usuario"""
+app.include_router(auth.router, prefix="/api/v1", tags=["auth"])
+app.include_router(catalogs.router, prefix="/api/v1")
+
+@app.post("/users/", response_model=UserOut, status_code=status.HTTP_201_CREATED)
+def create_user(user: UserCreate, db: Session = Depends(get_db)):
     db_user = auth.get_user(db, user.username)
     if db_user:
         raise HTTPException(status_code=400, detail="El usuario ya existe")
+    
     hashed_password = auth.get_password_hash(user.password)
-    new_user = User(
+    new_user = UserModel(
         username=user.username,
         email=user.email,
         full_name=user.full_name,
@@ -48,10 +58,11 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db.refresh(new_user)
     return new_user
 
-
-@app.post("/token", response_model=schemas.Token)
-async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    """Endpoint para login y obtener token JWT"""
+@app.post("/token", response_model=Token)
+async def login_for_access_token(
+    form_data: OAuth2PasswordRequestForm = Depends(), 
+    db: Session = Depends(get_db)
+):
     user = auth.get_user(db, form_data.username)
     if not user or not auth.verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
@@ -62,8 +73,6 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     access_token = auth.create_access_token(data={"sub": user.username})
     return {"access_token": access_token, "token_type": "bearer"}
 
-
-@app.get("/users/me", response_model=schemas.User)
-async def read_users_me(current_user: schemas.User = Depends(auth.get_current_user)):
-    """Endpoint para obtener información del usuario autenticado"""
+@app.get("/users/me", response_model=UserOut)
+async def read_users_me(current_user: UserModel = Depends(auth.get_current_user)):
     return current_user
