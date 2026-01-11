@@ -4,7 +4,7 @@ Servicio para lógica de negocio de usuarios
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from app.repositories.user_repository import UserRepository
-from app.schemas.user import UserCreate, User, UserCreateWithLocation
+from app.schemas.user import UserCreate, UserOut, UserCreateWithLocation
 from app.core.security import verify_password, hash_password
 
 
@@ -20,7 +20,7 @@ class UserService:
         """
         self.repository = UserRepository(db)
     
-    def register_user(self, user_create: UserCreate) -> User:
+    def register_user(self, user_create: UserCreate) -> UserOut:
         """
         Registrar un nuevo usuario
         
@@ -49,9 +49,9 @@ class UserService:
         
         # Crear el usuario
         db_user = self.repository.create_user(user_create)
-        return User.from_orm(db_user)
+        return UserOut.model_validate(db_user)
 
-    def register_full_user(self, user_create: UserCreateWithLocation) -> User:
+    def register_full_user(self, user_create: UserCreateWithLocation) -> UserOut:
         """
         Registrar un nuevo usuario con ubicación y gamificación
         
@@ -80,9 +80,9 @@ class UserService:
         
         # Crear el usuario con los datos de ubicación y gamificación
         db_user = self.repository.create_user_with_location(user_create)
-        return User.from_orm(db_user)
+        return UserOut.model_validate(db_user)
     
-    def authenticate_user(self, username: str, password: str) -> User:
+    def authenticate_user(self, username: str, password: str) -> UserOut:
         """
         Autenticar un usuario verificando su contraseña
         
@@ -118,9 +118,9 @@ class UserService:
                 detail="Usuario deshabilitado. Contacta al administrador."
             )
         
-        return User.from_orm(user)
+        return UserOut.model_validate(user)
     
-    def get_user_by_username(self, username: str) -> User:
+    def get_user_by_username(self, username: str) -> UserOut:
         """
         Obtener un usuario por nombre de usuario
         
@@ -139,9 +139,9 @@ class UserService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Usuario '{username}' no encontrado"
             )
-        return User.from_orm(user)
+        return UserOut.model_validate(user)
     
-    def get_user_by_id(self, user_id: int) -> User:
+    def get_user_by_id(self, user_id: int) -> UserOut:
         """
         Obtener un usuario por ID
         
@@ -160,9 +160,9 @@ class UserService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Usuario no encontrado"
             )
-        return User.from_orm(user)
+        return UserOut.model_validate(user)
     
-    def get_all_users(self, skip: int = 0, limit: int = 10) -> list[User]:
+    def get_all_users(self, skip: int = 0, limit: int = 10) -> list[UserOut]:
         """
         Obtener todos los usuarios
         
@@ -174,9 +174,9 @@ class UserService:
             Lista de usuarios
         """
         users = self.repository.get_all_users(skip, limit)
-        return [User.from_orm(u) for u in users]
+        return [UserOut.model_validate(u) for u in users]
     
-    def update_user(self, user_id: int, **kwargs) -> User:
+    def update_user(self, user_id: int, **kwargs) -> UserOut:
         """
         Actualizar un usuario
         
@@ -198,7 +198,7 @@ class UserService:
             )
         
         updated_user = self.repository.update_user(user, **kwargs)
-        return User.from_orm(updated_user)
+        return UserOut.model_validate(updated_user)
     
     def delete_user(self, user_id: int) -> bool:
         """

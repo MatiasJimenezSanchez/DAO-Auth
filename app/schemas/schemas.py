@@ -1,29 +1,51 @@
-# schemas.py
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
+from typing import Optional
+from datetime import datetime
+from typing import Literal
 
-class Token(BaseModel):
-    access_token: str
-    token_type: str
-
-class TokenData(BaseModel):
-    username: str | None = None
+class UserCreateWithLocation(BaseModel):
+    """Esquema para crear un usuario extendido con ubicación y gamificación"""
+    username: str
+    email: EmailStr
+    password: str
+    full_name: str
+    disabled: bool = False
+    city_id: Optional[int] = None
+    province_id: Optional[int] = None
+    region_id: Optional[int] = None
+    birth_date: Optional[datetime] = None
+    gender: Optional[Literal["masculino", "femenino", "otro", "prefiero_no_decir"]] = None
+    accepts_terms: bool
+    accepts_privacy: bool
+    current_level: int = 1  # Nivel inicial
+    xp_total: int = 0  # Puntos totales de experiencia
+    streak_days: int = 0  # Días de racha
 
 class UserBase(BaseModel):
+    """Campos base de usuario (compartidos entre crear y leer)"""
     username: str
-    email: str | None = None
-    full_name: str | None = None
-    disabled: bool | None = None
+    email: Optional[str] = None
+    full_name: Optional[str] = None
+    disabled: Optional[bool] = False
 
-# Esquema para CREAR un usuario (lo que envía el frontend al registrarse)
-class UserCreate(UserBase):
-    password: str
-
-# Esquema para LEER un usuario (lo que devuelve la API)
-class User(UserBase):
-    id: int # El ID lo genera la DB, así que va aquí
+class UserOut(UserBase):
+    """Esquema para leer un usuario (con ID y nuevos campos de gamificación)"""
+    id: int
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    current_level: int
+    xp_total: int
+    streak_days: int
+    avatar_url: Optional[str] = None
+    preferred_theme: Optional[str] = None
+    preferred_lang: Optional[str] = None
 
     class Config:
-        from_attributes = True # ¡Crucial! Permite leer datos de SQLAlchemy
+        from_attributes = True  # Permite leer desde objetos SQLAlchemy
 
-class UserInDB(User):
+class UserInDB(UserOut):
+    """Usuario con contraseña hasheada (solo para uso interno)"""
     hashed_password: str
+    
+    class Config:
+        from_attributes = True

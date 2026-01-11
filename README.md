@@ -362,35 +362,61 @@ print(response.json())
 ```
 
 ## 🧪 Testing
+## 🧪 Testing
 
-Para agregar tests unitarios:
+Notas sobre cómo están configurados y cómo ejecutar los tests en este repo:
+
+- Dependencias recomendadas:
 
 ```bash
-pip install pytest pytest-asyncio httpx
+pip install -r requirements.txt
+pip install pytest httpx
 ```
 
-Crea un archivo `test_api.py`:
+- Infraestructura de tests del proyecto:
+  - `tests/conftest.py` crea una base de datos SQLite temporal `./test.db` y ejecuta `Base.metadata.create_all(bind=engine)`.
+  - La dependencia `get_db` de la app se sobrescribe en los tests para usar la sesión de prueba.
+  - Por eso los tests son aislados y rápidos, no tocan tu contenedor Postgres.
 
-```python
-from fastapi.testclient import TestClient
-from main import app
+- Ejecutar todos los tests:
 
-client = TestClient(app)
-
-def test_root():
-    response = client.get("/")
-    assert response.status_code == 200
-
-def test_health():
-    response = client.get("/health")
-    assert response.status_code == 200
-    assert response.json()["status"] == "healthy"
-```
-
-Ejecuta:
 ```bash
-pytest
+pytest -v
 ```
+
+- Ejecutar un test específico (ejemplo):
+
+```bash
+pytest tests/test_users_extended.py::test_create_extended_user -q
+```
+
+- Resultado esperado en este punto del proyecto:
+  - `tests/test_users_extended.py` pasa (verifica creación de usuario con campos extendidos como `city_id`, `xp_total`).
+
+- Archivos importantes de test:
+  - `tests/conftest.py` — fixture `db` y `client` (TestClient + override `get_db`).
+  - `tests/test_users_extended.py` — caso de creación de usuario extendido con catálogos.
+
+Si necesitas que los tests usen Postgres en Docker en lugar de SQLite, modifica `tests/conftest.py` para apuntar a `DATABASE_URL` y asegúrate de levantar el servicio `db`.
+
+## 🔁 Migraciones y estado actual
+
+- Se corrigió y normalizó el flujo de migraciones durante la sesión:
+  - Se limpió la revisión problemática en `alembic/versions` (errores de `down_revision` y enum `gender`).
+  - Se aplicó una migración base (autogenerada) contra la BD en Docker y, para asegurar sincronía, se ejecutó `alembic stamp head` cuando fue necesario.
+  - Nota: para entornos de producción evita `stamp head` salvo que entiendas las implicaciones; en desarrollo fue usado para sincronizar rápidamente el estado.
+
+## 🌱 Seed (datos semilla)
+
+- Script de semillas creado: `app/db/seeds.py` — ejemplo para poblar regiones/provincias/ciudades de Ecuador.
+- Ejecutar seeds localmente (usa la misma DB configurada en `DATABASE_URL` o el fallback SQLite):
+
+```bash
+python -m app.db.seeds
+```
+
+Esto inserta algunas regiones, provincias y ciudades de ejemplo usadas por los tests y por el endpoint `POST /users/`.
+
 
 ## 🚀 Despliegue en Producción
 

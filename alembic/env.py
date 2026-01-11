@@ -1,9 +1,11 @@
 from __future__ import with_statement
 import os
+import sys
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config, pool
 from alembic import context
+
 
 # load .env
 from dotenv import load_dotenv

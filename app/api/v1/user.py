@@ -4,7 +4,7 @@ Endpoints para operaciones de usuario (CRUD)
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.db.session import get_db
-from app.schemas.user import User, UserCreate
+from app.schemas.user import User, UserCreate, UserCreateWithLocation
 from app.services.user_service import UserService
 from app.api.v1.auth import get_current_user
 
@@ -30,6 +30,26 @@ def register_user(
     """
     service = UserService(db)
     return service.register_user(user)
+
+
+@router.post("/register-full", response_model=User, status_code=status.HTTP_201_CREATED)
+def register_full_user(
+    user: UserCreateWithLocation,
+    db: Session = Depends(get_db)
+) -> User:
+    """
+    Endpoint para registrar un nuevo usuario con ubicación y gamificación
+    
+    - **username**: Nombre de usuario único
+    - **email**: Correo electrónico único
+    - **password**: Contraseña (se guardará hasheada)
+    - **full_name**: Nombre completo (opcional)
+    - **city_id, province_id, region_id**: Datos de ubicación
+    - **accepts_terms**: Aceptación de términos
+    - **accepts_privacy**: Aceptación de privacidad
+    """
+    service = UserService(db)
+    return service.register_full_user(user)
 
 
 @router.get("/", response_model=list[User])
