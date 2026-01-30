@@ -1,11 +1,11 @@
 """
 Models Package
 Importa todos los modelos para que Alembic los detecte
-VERSIÓN: Nombres en INGLÉS (estándar internacional)
+VERSIÓN: NOMBRES EN INGLÉS
 """
 from app.models.user import User
 from app.models.catalog import Region, Province, City
-from app.models.university import University, Career
+from app.models.university import Universidad, Carrera
 from app.models.empresa import Empresa
 
 __all__ = [
@@ -13,7 +13,7 @@ __all__ = [
     "Region",
     "Province",
     "City",
-    "University",
-    "Career",
+    "Universidad",
+    "Carrera",
     "Empresa"
 ]

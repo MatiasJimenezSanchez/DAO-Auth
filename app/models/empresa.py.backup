@@ -1,0 +1,143 @@
+# app/models/empresa.py
+from sqlalchemy import Column, Integer, String, Boolean, Text, DateTime, Enum as SQLEnum, Numeric, ForeignKey
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
+from app.db.base import Base
+import enum
+
+class TipoEmpresa(str, enum.Enum):
+    real_internacional = 'real_internacional'
+    real_nacional = 'real_nacional'
+    ficticia_educativa = 'ficticia_educativa'
+
+class TipoPartnership(str, enum.Enum):
+    basico = 'basico'
+    premium = 'premium'
+    enterprise = 'enterprise'
+    custom = 'custom'
+
+class Empresa(Base):
+    __tablename__ = 'empresas'
+    
+    # Identificación básica
+    id = Column(Integer, primary_key=True, index=True)
+    nombre_empresa = Column(String(200), unique=True, nullable=False)
+    slug = Column(String(200), unique=True, nullable=False, index=True)
+    
+    # Clasificación
+    tipo_empresa = Column(SQLEnum(TipoEmpresa), nullable=False)
+    industria_id = Column(Integer, ForeignKey('industrias.id'), nullable=True)  # Opcional por ahora
+    
+    # Información pública
+    descripcion_corta = Column(String(500))
+    descripcion_completa = Column(Text)
+    mision = Column(Text)
+    vision = Column(Text)
+    
+    # Branding
+    url_logo = Column(String(500))
+    url_banner = Column(String(500))
+    url_sitio_web = Column(String(500))
+    color_primario = Column(String(7))  # Hex color
+    
+    # Redes sociales
+    linkedin_url = Column(String(500))
+    twitter_url = Column(String(500))
+    
+    # Contacto
+    email_contacto = Column(String(255))
+    telefono = Column(String(20))
+    pais = Column(String(100), default='Ecuador')
+    ciudad = Column(String(100))
+    
+    # Partnership
+    es_partner_activo = Column(Boolean, default=False, nullable=False)
+    tipo_partnership = Column(SQLEnum(TipoPartnership), default=TipoPartnership.basico)
+    fecha_inicio_partnership = Column(DateTime(timezone=True))
+    fecha_fin_partnership = Column(DateTime(timezone=True))
+    
+    # Límites según plan
+    max_simulaciones_activas = Column(Integer, default=5)
+    max_usuarios_admin = Column(Integer, default=3)
+    
+    # Permisos
+    puede_ver_analytics = Column(Boolean, default=True)
+    puede_contactar_candidatos = Column(Boolean, default=False)
+    puede_exportar_datos = Column(Boolean, default=False)
+    
+    # Verificación
+    verificado = Column(Boolean, default=False)
+    verificado_en = Column(DateTime(timezone=True))
+    
+    # Facturación Ecuador
+    ruc = Column(String(20))
+    razon_social = Column(String(200))
+    
+    # Métricas agregadas (desnormalizado para performance)
+    total_simulaciones = Column(Integer, default=0)
+    total_usuarios_inscritos = Column(Integer, default=0)
+    calificacion_promedio = Column(Numeric(3,2), default=0)
+    
+    # Estado
+    esta_activo = Column(Boolean, default=True)
+    razon_desactivacion = Column(Text)
+    
+    # Timestamps
+    creado_en = Column(DateTime(timezone=True), server_default=func.now())
+    actualizado_en = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Relationships (cuando se implementen)
+    # usuarios_empresa = relationship('UsuarioEmpresa', back_populates='empresa')
+    # simulaciones = relationship('Simulacion', back_populates='empresa')
+
+class UsuarioEmpresa(Base):
+    __tablename__ = 'usuarios_empresa'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    empresa_id = Column(Integer, ForeignKey('empresas.id'), nullable=False)
+    
+    # Identificación
+    email = Column(String(255), unique=True, nullable=False, index=True)
+    password_hash = Column(String(255), nullable=False)
+    nombre_completo = Column(String(200), nullable=False)
+    cargo = Column(String(100))
+    telefono = Column(String(20))
+    
+    # Avatar
+    url_avatar = Column(String(500))
+    
+    # Roles
+    rol = Column(String(50), nullable=False, default='viewer')  # owner, admin, editor, viewer
+    
+    # Permisos granulares
+    puede_crear_simulaciones = Column(Boolean, default=False)
+    puede_editar_simulaciones = Column(Boolean, default=False)
+    puede_publicar_simulaciones = Column(Boolean, default=False)
+    puede_ver_candidatos = Column(Boolean, default=False)
+    puede_contactar_candidatos = Column(Boolean, default=False)
+    puede_exportar_datos = Column(Boolean, default=False)
+    puede_gestionar_usuarios = Column(Boolean, default=False)
+    
+    # Verificación
+    email_verificado = Column(Boolean, default=False)
+    email_verificado_en = Column(DateTime(timezone=True))
+    
+    # Actividad
+    ultimo_acceso = Column(DateTime(timezone=True))
+    total_accesos = Column(Integer, default=0)
+    
+    # Invitación
+    invitado_por_usuario_id = Column(Integer, ForeignKey('usuarios_empresa.id'))
+    token_invitacion = Column(String(100), unique=True)
+    invitacion_aceptada_en = Column(DateTime(timezone=True))
+    
+    # Estado
+    esta_activo = Column(Boolean, default=True)
+    
+    # Timestamps
+    creado_en = Column(DateTime(timezone=True), server_default=func.now())
+    actualizado_en = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Relationships
+    # empresa = relationship('Empresa', back_populates='usuarios_empresa')
+    # invitado_por = relationship('UsuarioEmpresa', remote_side=[id])

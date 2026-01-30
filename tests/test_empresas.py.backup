@@ -1,0 +1,141 @@
+# tests/test_empresas.py
+import pytest
+from fastapi.testclient import TestClient
+from sqlalchemy.orm import Session
+
+from app.models.empresa import Empresa, UsuarioEmpresa
+
+def test_crear_empresa(client: TestClient, db: Session):
+    '''Test: Crear una nueva empresa'''
+    empresa_data = {
+        'nombre_empresa': 'Empresa Test S.A.',
+        'slug': 'empresa-test',
+        'tipo_empresa': 'real_nacional',
+        'descripcion_corta': 'Empresa de prueba',
+        'email_contacto': 'contacto@empresatest.com',
+        'pais': 'Ecuador',
+        'ciudad': 'Quito',
+        'tipo_partnership': 'basico',
+        'ruc': '1234567890001'
+    }
+    
+    response = client.post('/api/v1/empresas/', json=empresa_data)
+    
+    assert response.status_code == 201
+    data = response.json()
+    assert data['nombre_empresa'] == empresa_data['nombre_empresa']
+    assert data['slug'] == empresa_data['slug']
+    assert data['es_partner_activo'] == False
+    assert data['verificado'] == False
+    assert 'id' in data
+
+def test_listar_empresas(client: TestClient, db: Session):
+    '''Test: Listar empresas'''
+    
+    # Crear empresa de prueba
+    empresa = Empresa(
+        nombre_empresa='Test Corp',
+        slug='test-corp',
+        tipo_empresa='real_internacional',
+        es_partner_activo=True
+    )
+    db.add(empresa)
+    db.commit()
+    
+    response = client.get('/api/v1/empresas/')
+    
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) >= 1
+    assert any(e['slug'] == 'test-corp' for e in data)
+
+def test_obtener_empresa_con_usuarios(client: TestClient, db: Session):
+    '''Test: Obtener empresa con sus usuarios'''
+    
+    # Crear empresa
+    empresa = Empresa(
+        nombre_empresa='Enterprise Inc',
+        slug='enterprise-inc',
+        tipo_empresa='real_internacional'
+    )
+    db.add(empresa)
+    db.commit()
+    db.refresh(empresa)
+    
+    # Crear usuario de empresa
+    usuario = UsuarioEmpresa(
+        empresa_id=empresa.id,
+        email='admin@enterprise.com',
+        password_hash='hashed_password',
+        nombre_completo='Admin Test',
+        rol='admin'
+    )
+    db.add(usuario)
+    db.commit()
+    
+    response = client.get(f'/api/v1/empresas/{empresa.id}')
+    
+    assert response.status_code == 200
+    data = response.json()
+    assert data['nombre_empresa'] == 'Enterprise Inc'
+    assert 'usuarios' in data
+    assert len(data['usuarios']) == 1
+    assert data['usuarios'][0]['email'] == 'admin@enterprise.com'
+
+def test_crear_usuario_empresa(client: TestClient, db: Session):
+    '''Test: Crear usuario de empresa'''
+    
+    # Crear empresa primero
+    empresa = Empresa(
+        nombre_empresa='Tech Solutions',
+        slug='tech-solutions',
+        tipo_empresa='real_nacional'
+    )
+    db.add(empresa)
+    db.commit()
+    db.refresh(empresa)
+    
+    usuario_data = {
+        'email': 'manager@techsolutions.com',
+        'password': 'securepass123',
+        'nombre_completo': 'Manager Test',
+        'cargo': 'Content Manager',
+        'rol': 'editor',
+        'empresa_id': empresa.id
+    }
+    
+    response = client.post(f'/api/v1/empresas/{empresa.id}/usuarios', json=usuario_data)
+    
+    assert response.status_code == 201
+    data = response.json()
+    assert data['email'] == usuario_data['email']
+    assert data['nombre_completo'] == usuario_data['nombre_completo']
+    assert data['empresa_id'] == empresa.id
+    assert 'password' not in data  # No debe devolver password
+
+def test_actualizar_empresa(client: TestClient, db: Session):
+    '''Test: Actualizar empresa'''
+    
+    # Crear empresa
+    empresa = Empresa(
+        nombre_empresa='Old Name',
+        slug='old-name',
+        tipo_empresa='real_nacional'
+    )
+    db.add(empresa)
+    db.commit()
+    db.refresh(empresa)
+    
+    update_data = {
+        'descripcion_corta': 'Nueva descripción',
+        'ciudad': 'Guayaquil',
+        'url_sitio_web': 'https://newwebsite.com'
+    }
+    
+    response = client.put(f'/api/v1/empresas/{empresa.id}', json=update_data)
+    
+    assert response.status_code == 200
+    data = response.json()
+    assert data['descripcion_corta'] == update_data['descripcion_corta']
+    assert data['ciudad'] == update_data['ciudad']
+    assert data['url_sitio_web'] == update_data['url_sitio_web']
