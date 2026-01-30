@@ -128,10 +128,10 @@ AURUM BACK END/
 ```
 
 ---
-# 🚀 Inicio Rápido (Quick Start)PrerrequisitosDocker Desktop instalado y corriendo.PowerShell (Windows).1. Clonar y ConfigurarPowerShellgit clone [https://github.com/MatiasJimenezSanchez/DAO-Auth.git](https://github.com/MatiasJimenezSanchez/DAO-Auth.git)
+🚀 Inicio Rápido (Quick Start)PrerrequisitosDocker Desktop instalado y corriendo.PowerShell (Windows).1. Clonar y ConfigurarPowerShellgit clone [https://github.com/MatiasJimenezSanchez/DAO-Auth.git](https://github.com/MatiasJimenezSanchez/DAO-Auth.git)
 cd DAO-Authcp .env.example .env
-# 2. Cargar Herramientas de DesarrolloHemos incluido un script de PowerShell para facilitar la gestión. Cárgalo en tu sesión:PowerShell. .\comandos-docker.ps1
-# 3. Iniciar ServiciosPowerShellaurum-start
+2. Cargar Herramientas de DesarrolloHemos incluido un script de PowerShell para facilitar la gestión. Cárgalo en tu sesión:PowerShell. .\comandos-docker.ps1
+3. Iniciar ServiciosPowerShellaurum-start
 Esto levantará la API en http://localhost:8000 y PostgreSQL en el puerto 5432.4. Verificar EstadoPowerShellaurum-status
 🛠️ Comandos Disponibles (PowerShell)ComandoDescripciónaurum-startLevanta los contenedores (API + DB)aurum-stopDetiene los serviciosaurum-restartReinicia los servicios`aurum-logs [webdb]`aurum-testEjecuta la suite de pruebas (Pytest) dentro del contenedoraurum-shell webEntra a la consola del contenedor de la APIaurum-db-reset⚠️ Borra y recrea la base de datos desde cero
 ## 📦 Requisitos
