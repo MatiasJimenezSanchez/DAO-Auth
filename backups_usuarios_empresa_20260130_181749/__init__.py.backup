@@ -1,0 +1,29 @@
+"""
+Models Package
+Importa todos los modelos para que Alembic los detecte
+VERSIÓN: Nombres en INGLÉS (estándar internacional)
+"""
+from app.models.user import User
+from app.models.catalog import (
+    Region, Province, City,
+    Industry, ContentCategory, SkillCatalog
+)
+from app.models.university import University, Career
+from app.models.empresa import Empresa
+
+__all__ = [
+    "User",
+    # Geographic
+    "Region",
+    "Province",
+    "City",
+    # Business
+    "Industry",
+    "ContentCategory",
+    "SkillCatalog",
+    # Education
+    "University",
+    "Career",
+    # B2B
+    "Empresa"
+]
