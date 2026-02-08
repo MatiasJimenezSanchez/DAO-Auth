@@ -16,7 +16,6 @@ class CompanyService:
         self.db = db
     
     def create_company(self, company_data: EmpresaCreate) -> Company:
-        # 1. Validar nombre único
         existing = self.repo.get_by_name(company_data.nombre_empresa)
         if existing:
             raise HTTPException(
@@ -24,7 +23,6 @@ class CompanyService:
                 detail=f"Ya existe una empresa con el nombre {company_data.nombre_empresa}"
             )
         
-        # 2. Validar slug único
         existing_slug = self.repo.get_by_slug(company_data.slug)
         if existing_slug:
             raise HTTPException(
@@ -32,12 +30,12 @@ class CompanyService:
                 detail=f"El slug {company_data.slug} ya está en uso"
             )
         
-        # 3. Crear empresa
         return self.repo.create(company_data)
     
     def get_company(self, company_id: int) -> Company:
         company = self.repo.get(company_id)
-        if not company:
+        # FIX DE SEGURIDAD: Verificar que esté activa
+        if not company or not company.esta_activo:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Empresa con ID {company_id} no encontrada"
@@ -46,7 +44,8 @@ class CompanyService:
     
     def get_company_by_slug(self, slug: str) -> Company:
         company = self.repo.get_by_slug(slug)
-        if not company:
+        # FIX DE SEGURIDAD
+        if not company or not company.esta_activo:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Empresa con slug {slug} no encontrada"
@@ -67,18 +66,27 @@ class CompanyService:
         return self.repo.update(company_id, company_data)
     
     def delete_company(self, company_id: int) -> None:
-        company = self.get_company(company_id)
+        """Soft delete"""
+        # Obtenemos sin usar get_company para evitar recursión si ya está inactiva
+        company = self.repo.get(company_id)
+        if not company or not company.esta_activo:
+             raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Empresa con ID {company_id} no encontrada"
+            )
+            
         company.esta_activo = False
         self.db.commit()
     
     def search_companies(self, query: str, limit: int = 10) -> List[Company]:
-        return self.repo.search_by_name(query, limit)
+        # Filtrar inactivos en búsqueda
+        results = self.repo.search_by_name(query, limit)
+        return [c for c in results if c.esta_activo]
     
     def get_top_companies(self, limit: int = 10) -> List[Company]:
         return self.repo.get_top_rated(limit)
     
     def get_company_stats(self, company_id: int) -> Dict:
-        """Obtener estadísticas completas de una empresa"""
         company = self.get_company(company_id)
         return {
             "company_id": company.id,

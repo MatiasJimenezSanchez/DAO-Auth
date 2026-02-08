@@ -44,3 +44,5 @@ try:
 except Exception:
 	# Import errors are handled by the caller; keep Base defined even if models fail to import
 	pass
+
+from app.models.university import University  # noqa

@@ -1,61 +1,43 @@
-from sqlalchemy import Column, Integer, String, Boolean, Text, ForeignKey, Enum as SQLEnum
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text
+from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.db.base import Base
-import enum
-
-class UniversityType(str, enum.Enum):
-    public = 'publica'
-    private = 'privada'
-    cofinanced = 'cofinanciada'
-
-class AccreditationType(str, enum.Enum):
-    A = 'A'
-    B = 'B'
-    C = 'C'
-    pending = 'en_proceso'
 
 class University(Base):
-    __tablename__ = 'universities'
-    
+    """Modelo de Universidades (Nombre en Inglés para coincidir con init)"""
+    __tablename__ = "universities"
+
     id = Column(Integer, primary_key=True, index=True)
-    code = Column(String(20), unique=True, nullable=False, index=True)
-    name = Column(String(200), nullable=False)
-    acronym = Column(String(20))
-    university_type = Column(SQLEnum(UniversityType), nullable=False)
-    accreditation = Column(SQLEnum(AccreditationType))
-    description = Column(Text)
-    website = Column(String(200))
-    logo_url = Column(String(300))
+    nombre = Column(String(200), unique=True, nullable=False, index=True)
+    slug = Column(String(200), unique=True, nullable=False, index=True)
+    dominio = Column(String(100), nullable=True) 
     
-    # Ubicación
-    city_id = Column(Integer, ForeignKey('cities.id'))
-    address = Column(String(300))
-    
-    # Contacto
-    phone = Column(String(50))
-    email = Column(String(100))
+    tipo = Column(String(50), default="Privada")
+    pais = Column(String(100), default="Ecuador")
+    ciudad = Column(String(100))
+    direccion = Column(String(300))
     
     # Estado
-    is_active = Column(Boolean, default=True)
+    es_partner = Column(Boolean, default=False)
+    esta_activo = Column(Boolean, default=True)
     
-    # Relationships
-    careers = relationship('Career', back_populates='university')
+    # Timestamps
+    creado_en = Column(DateTime(timezone=True), server_default=func.now())
+    actualizado_en = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relaciones
+    careers = relationship("Career", back_populates="university")
+
+    def __repr__(self):
+        return f"<University {self.nombre}>"
 
 class Career(Base):
-    __tablename__ = 'careers'
-    
+    """Modelo de Carreras (Restaurado)"""
+    __tablename__ = "careers"
+
     id = Column(Integer, primary_key=True, index=True)
-    code = Column(String(20), unique=True, nullable=False)
-    name = Column(String(200), nullable=False)
-    description = Column(Text)
-    duration_semesters = Column(Integer)  # Duración en semestres
+    university_id = Column(Integer, ForeignKey("universities.id"))
+    nombre = Column(String(200), nullable=False)
+    codigo = Column(String(50))
     
-    university_id = Column(Integer, ForeignKey('universities.id'), nullable=False)
-    
-    # Modalidad
-    modality = Column(String(50))  # presencial, online, hibrida
-    
-    is_active = Column(Boolean, default=True)
-    
-    # Relationships
-    university = relationship('University', back_populates='careers')
+    university = relationship("University", back_populates="careers")

@@ -8,7 +8,9 @@ from app.services.company_service import CompanyService
 
 router = APIRouter()
 
-@router.post("/", response_model=EmpresaOut, status_code=status.HTTP_201_CREATED)
+# Doble decorador para soportar /api/v1/empresas y /api/v1/empresas/
+@router.post("", response_model=EmpresaOut, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=EmpresaOut, status_code=status.HTTP_201_CREATED, include_in_schema=False)
 def create_company(
     company_data: EmpresaCreate,
     db: Session = Depends(get_db)
@@ -16,7 +18,8 @@ def create_company(
     service = CompanyService(db)
     return service.create_company(company_data)
 
-@router.get("/", response_model=List[EmpresaOut])
+@router.get("", response_model=List[EmpresaOut])
+@router.get("/", response_model=List[EmpresaOut], include_in_schema=False)
 def list_companies(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=100),
@@ -44,15 +47,15 @@ def get_top_companies(
     service = CompanyService(db)
     return service.get_top_companies(limit)
 
-@router.get("/{company_id}", response_model=EmpresaOut)
-def get_company(company_id: int, db: Session = Depends(get_db)):
-    service = CompanyService(db)
-    return service.get_company(company_id)
-
 @router.get("/slug/{slug}", response_model=EmpresaOut)
 def get_company_by_slug(slug: str, db: Session = Depends(get_db)):
     service = CompanyService(db)
     return service.get_company_by_slug(slug)
+
+@router.get("/{company_id}", response_model=EmpresaOut)
+def get_company(company_id: int, db: Session = Depends(get_db)):
+    service = CompanyService(db)
+    return service.get_company(company_id)
 
 @router.put("/{company_id}", response_model=EmpresaOut)
 def update_company(

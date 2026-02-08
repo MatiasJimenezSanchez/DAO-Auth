@@ -1,44 +1,30 @@
-from pydantic import BaseModel, HttpUrl, ConfigDict
-from typing import Optional, List
-
+from pydantic import BaseModel, ConfigDict
+from typing import Optional
+from datetime import datetime
 
 class UniversityBase(BaseModel):
-    name: str
-    code: str
-    acronym: Optional[str] = None
-    university_type: str
-    accreditation: Optional[str] = None
-    description: Optional[str] = None
-    website: Optional[str] = None
-    logo_url: Optional[str] = None
-    city_id: Optional[int] = None
-    address: Optional[str] = None
-    phone: Optional[str] = None
-    email: Optional[str] = None
+    nombre: str
+    slug: str
+    dominio: Optional[str] = None
+    tipo: str = "Privada"
+    pais: str = "Ecuador"
+    ciudad: Optional[str] = None
+    direccion: Optional[str] = None
+    es_partner: bool = False
 
+class UniversityCreate(UniversityBase):
+    pass
+
+class UniversityUpdate(BaseModel):
+    nombre: Optional[str] = None
+    dominio: Optional[str] = None
+    es_partner: Optional[bool] = None
+    esta_activo: Optional[bool] = None
 
 class UniversityOut(UniversityBase):
     id: int
-    is_active: bool
-    
+    esta_activo: bool
+    creado_en: datetime
+    actualizado_en: Optional[datetime] = None
+
     model_config = ConfigDict(from_attributes=True)
-
-
-class CareerBase(BaseModel):
-    name: str
-    code: str
-    description: Optional[str] = None
-    duration_semesters: Optional[int] = None
-    university_id: int
-    modality: Optional[str] = None
-
-
-class CareerOut(CareerBase):
-    id: int
-    is_active: bool
-    
-    model_config = ConfigDict(from_attributes=True)
-
-
-class UniversityWithCareers(UniversityOut):
-    careers: List[CareerOut] = []
