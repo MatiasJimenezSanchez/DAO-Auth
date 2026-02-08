@@ -1,178 +1,183 @@
 """
-Seed Data Script
-Pobla la base de datos con información inicial:
-- Catálogos Geográficos (Ecuador)
-- Industrias y Categorías
-- Habilidades
+Database Seeder
+Load initial data from JSON files (IDEMPOTENT)
 """
-import logging
+import json
+from pathlib import Path
 from sqlalchemy.orm import Session
-from app.db.session import SessionLocal
-from app.models.catalog import (
-    Region, Province, City, 
-    Industry, ContentCategory, SkillCatalog
-)
+from app.models.catalog import Industry, SkillCatalog
+from app.db.session import get_db
 
-# Configurar logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+DATA_DIR = Path(__file__).parent / "data"
 
-def seed_geography(db: Session):
-    logger.info("--- Sembrando Geografía (Ecuador) ---")
+
+def load_industries(db: Session):
+    """
+    Load industries from JSON file
+    Idempotent: checks if exists before creating
+    """
+    json_file = DATA_DIR / "industries.json"
     
-    # 1. REGIONES
-    regiones_data = [
-        {"name": "Costa", "code": "COS", "map_color": "#FFD700"},
-        {"name": "Sierra", "code": "SIE", "map_color": "#8B4513"},
-        {"name": "Amazonía", "code": "AMA", "map_color": "#228B22"},
-        {"name": "Insular", "code": "INS", "map_color": "#00BFFF"},
-    ]
+    if not json_file.exists():
+        print(f"⚠ File not found: {json_file}")
+        return
     
-    regiones_map = {}
+    with open(json_file, 'r', encoding='utf-8') as f:
+        industries_data = json.load(f)
     
-    for r_data in regiones_data:
-        region = db.query(Region).filter(Region.code == r_data["code"]).first()
-        if not region:
-            region = Region(**r_data)
-            db.add(region)
-            db.commit()
-            db.refresh(region)
-            logger.info(f"Region creada: {region.name}")
-        regiones_map[region.code] = region.id
-
-    # 2. PROVINCIAS (Ejemplo: Principales)
-    provincias_data = [
-        # Sierra
-        {"name": "Pichincha", "code": "PIC", "region_code": "SIE"},
-        {"name": "Azuay", "code": "AZU", "region_code": "SIE"},
-        {"name": "Loja", "code": "LOJ", "region_code": "SIE"},
-        # Costa
-        {"name": "Guayas", "code": "GUA", "region_code": "COS"},
-        {"name": "Manabí", "code": "MAN", "region_code": "COS"},
-        {"name": "El Oro", "code": "ORO", "region_code": "COS"},
-    ]
-
-    provincias_map = {}
-
-    for p_data in provincias_data:
-        p_code = p_data.pop("code")
-        reg_code = p_data.pop("region_code")
-        
-        provincia = db.query(Province).filter(Province.code == p_code).first()
-        if not provincia:
-            provincia = Province(
-                code=p_code,
-                region_id=regiones_map[reg_code],
-                **p_data
+    created = 0
+    skipped = 0
+    
+    # First pass: create parent industries
+    for item in industries_data:
+        if item.get('level', 1) == 1:  # Parent industries
+            # Check if exists
+            existing = db.query(Industry).filter(Industry.slug == item['slug']).first()
+            if existing:
+                skipped += 1
+                continue
+            
+            industry = Industry(
+                name=item['name'],
+                slug=item['slug'],
+                description=item.get('description'),
+                color=item.get('color'),
+                level=item.get('level', 1),
+                order=item.get('order', 999)
             )
-            db.add(provincia)
-            db.commit()
-            db.refresh(provincia)
-            logger.info(f"Provincia creada: {provincia.name}")
-        provincias_map[p_code] = provincia.id
-
-    # 3. CIUDADES (Principales)
-    ciudades_data = [
-        {"name": "Quito", "prov_code": "PIC", "is_capital": True},
-        {"name": "Guayaquil", "prov_code": "GUA", "is_capital": False},
-        {"name": "Cuenca", "prov_code": "AZU", "is_capital": False},
-        {"name": "Loja", "prov_code": "LOJ", "is_capital": False},
-        {"name": "Manta", "prov_code": "MAN", "is_capital": False},
-        {"name": "Machala", "prov_code": "ORO", "is_capital": False},
-    ]
-
-    for c_data in ciudades_data:
-        prov_code = c_data.pop("prov_code")
-        ciudad = db.query(City).filter(City.name == c_data["name"]).first()
-        if not ciudad:
-            ciudad = City(
-                province_id=provincias_map[prov_code],
-                **c_data
+            db.add(industry)
+            created += 1
+    
+    db.commit()
+    
+    # Second pass: create child industries
+    for item in industries_data:
+        if item.get('level', 1) > 1:  # Child industries
+            # Check if exists
+            existing = db.query(Industry).filter(Industry.slug == item['slug']).first()
+            if existing:
+                skipped += 1
+                continue
+            
+            # Find parent
+            parent = None
+            if 'parent_slug' in item:
+                parent = db.query(Industry).filter(Industry.slug == item['parent_slug']).first()
+            
+            industry = Industry(
+                name=item['name'],
+                slug=item['slug'],
+                description=item.get('description'),
+                color=item.get('color'),
+                level=item.get('level', 1),
+                parent_industry_id=parent.id if parent else None,
+                order=item.get('order', 999)
             )
-            db.add(ciudad)
-            db.commit()
-            logger.info(f"Ciudad creada: {ciudad.name}")
-
-def seed_industries(db: Session):
-    logger.info("--- Sembrando Industrias ---")
+            db.add(industry)
+            created += 1
     
-    # Industrias Padre
-    parents = [
-        {"name": "Tecnología", "slug": "tecnologia", "icon": "laptop"},
-        {"name": "Finanzas", "slug": "finanzas", "icon": "attach_money"},
-        {"name": "Salud", "slug": "salud", "icon": "local_hospital"},
-        {"name": "Ingeniería", "slug": "ingenieria", "icon": "engineering"},
-    ]
+    db.commit()
     
-    parents_map = {}
+    print(f"✓ Industries: {created} created, {skipped} already existed")
+
+
+def load_skills(db: Session):
+    """
+    Load skills from JSON file
+    Idempotent: checks if exists before creating
+    """
+    json_file = DATA_DIR / "skills.json"
     
-    for p in parents:
-        ind = db.query(Industry).filter(Industry.slug == p["slug"]).first()
-        if not ind:
-            ind = Industry(**p, level=1)
-            db.add(ind)
-            db.commit()
-            db.refresh(ind)
-        parents_map[p["slug"]] = ind.id
-
-    # Industrias Hijas (Sub-industrias)
-    children = [
-        {"name": "Desarrollo de Software", "slug": "software-dev", "parent": "tecnologia"},
-        {"name": "Ciberseguridad", "slug": "cybersecurity", "parent": "tecnologia"},
-        {"name": "Data Science", "slug": "data-science", "parent": "tecnologia"},
-        {"name": "Banca de Inversión", "slug": "investment-banking", "parent": "finanzas"},
-        {"name": "Fintech", "slug": "fintech", "parent": "finanzas"},
-    ]
-
-    for c in children:
-        parent_slug = c.pop("parent")
-        ind = db.query(Industry).filter(Industry.slug == c["slug"]).first()
-        if not ind:
-            ind = Industry(
-                **c, 
-                parent_industry_id=parents_map[parent_slug],
-                level=2
-            )
-            db.add(ind)
-            db.commit()
-
-def seed_skills(db: Session):
-    logger.info("--- Sembrando Skills ---")
+    if not json_file.exists():
+        print(f"⚠ File not found: {json_file}")
+        return
     
-    skills = [
-        {"name": "Python", "slug": "python", "category": "technical", "demand": "high"},
-        {"name": "React", "slug": "react", "category": "technical", "demand": "high"},
-        {"name": "SQL", "slug": "sql", "category": "technical", "demand": "high"},
-        {"name": "Liderazgo", "slug": "liderazgo", "category": "soft", "demand": "medium"},
-        {"name": "Comunicación Efectiva", "slug": "comunicacion", "category": "soft", "demand": "high"},
-        {"name": "Inglés B2", "slug": "ingles-b2", "category": "language", "demand": "high"},
-    ]
-
-    for s in skills:
-        skill = db.query(SkillCatalog).filter(SkillCatalog.slug == s["slug"]).first()
-        if not skill:
+    with open(json_file, 'r', encoding='utf-8') as f:
+        skills_data = json.load(f)
+    
+    created = 0
+    skipped = 0
+    
+    # First pass: create parent skills
+    for item in skills_data:
+        if 'parent_slug' not in item:  # Parent skills
+            # Check if exists
+            existing = db.query(SkillCatalog).filter(SkillCatalog.slug == item['slug']).first()
+            if existing:
+                skipped += 1
+                continue
+            
             skill = SkillCatalog(
-                name=s["name"],
-                slug=s["slug"],
-                category=s["category"],
-                market_demand=s["demand"]
+                name=item['name'],
+                slug=item['slug'],
+                category=item['category'],
+                description=item.get('description'),
+                market_demand=item.get('market_demand', 'medium'),
+                trend=item.get('trend', 'stable'),
+                avg_salary_impact=item.get('avg_salary_impact'),
+                icon_url=item.get('icon_url'),
+                color=item.get('color')
             )
             db.add(skill)
-            db.commit()
-            logger.info(f"Skill creada: {skill.name}")
+            created += 1
+    
+    db.commit()
+    
+    # Second pass: create child skills
+    for item in skills_data:
+        if 'parent_slug' in item:  # Child skills
+            # Check if exists
+            existing = db.query(SkillCatalog).filter(SkillCatalog.slug == item['slug']).first()
+            if existing:
+                skipped += 1
+                continue
+            
+            # Find parent
+            parent = db.query(SkillCatalog).filter(SkillCatalog.slug == item['parent_slug']).first()
+            
+            skill = SkillCatalog(
+                name=item['name'],
+                slug=item['slug'],
+                category=item['category'],
+                description=item.get('description'),
+                market_demand=item.get('market_demand', 'medium'),
+                trend=item.get('trend', 'stable'),
+                avg_salary_impact=item.get('avg_salary_impact'),
+                parent_skill_id=parent.id if parent else None,
+                taxonomy_level=2 if parent else 1,
+                icon_url=item.get('icon_url'),
+                color=item.get('color')
+            )
+            db.add(skill)
+            created += 1
+    
+    db.commit()
+    
+    print(f"✓ Skills: {created} created, {skipped} already existed")
 
-def main():
-    db = SessionLocal()
+
+def seed_all():
+    """
+    Run all seeders
+    """
+    print("\n" + "="*50)
+    print("DATABASE SEEDER")
+    print("="*50 + "\n")
+    
+    db = next(get_db())
+    
     try:
-        seed_geography(db)
-        seed_industries(db)
-        seed_skills(db)
-        logger.info("✅ PROCESO DE SEMILLAS COMPLETADO EXITOSAMENTE")
+        load_industries(db)
+        load_skills(db)
+        
+        print("\n✅ Seeding completed successfully\n")
     except Exception as e:
-        logger.error(f"❌ Error sembrando datos: {e}")
+        print(f"\n✗ Seeding failed: {e}\n")
         db.rollback()
+        raise
     finally:
         db.close()
 
+
 if __name__ == "__main__":
-    main()
+    seed_all()
