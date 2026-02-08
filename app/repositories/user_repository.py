@@ -1,142 +1,108 @@
 """
-Repositorio para operaciones de usuario en base de datos
+User Repository
+Specific database operations for User model
 """
+from typing import Optional
 from sqlalchemy.orm import Session
 from app.models.user import User
-from app.schemas.user import UserCreate
-from app.core.security import hash_password
+from app.schemas.user import UserCreate, UserUpdate
+from app.repositories.base_repository import BaseRepository
 
 
-class UserRepository:
-    """Clase para gestionar operaciones de usuario en BD"""
+class UserRepository(BaseRepository[User, UserCreate, UserUpdate]):
+    """
+    User-specific repository
+    Extends BaseRepository with custom queries
+    """
     
     def __init__(self, db: Session):
-        """
-        Inicializar el repositorio con una sesión de BD
-        
-        Args:
-            db: Sesión de SQLAlchemy
-        """
-        self.db = db
+        super().__init__(User, db)
     
-    def get_user_by_username(self, username: str) -> User | None:
+    def get_by_email(self, email: str) -> Optional[User]:
         """
-        Obtener un usuario por nombre de usuario
+        Get user by email
         
         Args:
-            username: Nombre de usuario
+            email: User email
             
         Returns:
-            Usuario encontrado o None
-        """
-        return self.db.query(User).filter(User.username == username).first()
-    
-    def get_user_by_email(self, email: str) -> User | None:
-        """
-        Obtener un usuario por email
-        
-        Args:
-            email: Email del usuario
-            
-        Returns:
-            Usuario encontrado o None
+            User instance or None
         """
         return self.db.query(User).filter(User.email == email).first()
     
-    def get_user_by_id(self, user_id: int) -> User | None:
+    def get_by_username(self, username: str) -> Optional[User]:
         """
-        Obtener un usuario por ID
+        Get user by username
         
         Args:
-            user_id: ID del usuario
+            username: Username
             
         Returns:
-            Usuario encontrado o None
+            User instance or None
         """
-        return self.db.query(User).filter(User.id == user_id).first()
+        return self.db.query(User).filter(User.username == username).first()
     
-    def get_all_users(self, skip: int = 0, limit: int = 10) -> list[User]:
+    def email_exists(self, email: str) -> bool:
         """
-        Obtener todos los usuarios con paginación
+        Check if email is already registered
         
         Args:
-            skip: Número de registros a saltar
-            limit: Número máximo de registros a retornar
+            email: Email to check
             
         Returns:
-            Lista de usuarios
+            True if exists
         """
-        return self.db.query(User).offset(skip).limit(limit).all()
+        return self.db.query(User).filter(User.email == email).first() is not None
     
-    def create_user(self, user_create: UserCreate) -> User:
+    def username_exists(self, username: str) -> bool:
         """
-        Crear un nuevo usuario
+        Check if username is taken
         
         Args:
-            user_create: Datos del usuario a crear
+            username: Username to check
             
         Returns:
-            Usuario creado
+            True if exists
         """
-        hashed_password = hash_password(user_create.password)
-        db_user = User(
-            username=user_create.username,
-            email=user_create.email,
-            full_name=user_create.full_name,
-            hashed_password=hashed_password,
-            disabled=user_create.disabled if user_create.disabled is not None else False
-        )
-        self.db.add(db_user)
-        self.db.commit()
-        self.db.refresh(db_user)
-        return db_user
+        return self.db.query(User).filter(User.username == username).first() is not None
     
-    def update_user(self, user: User, **kwargs) -> User:
+    def get_active_users(self, skip: int = 0, limit: int = 100):
         """
-        Actualizar un usuario
+        Get only active users
         
         Args:
-            user: Usuario a actualizar
-            **kwargs: Campos a actualizar
+            skip: Pagination offset
+            limit: Max records
             
         Returns:
-            Usuario actualizado
+            List of active users
         """
-        for key, value in kwargs.items():
-            if hasattr(user, key) and value is not None:
-                setattr(user, key, value)
-        
-        self.db.commit()
-        self.db.refresh(user)
-        return user
+        return self.db.query(User).filter(User.is_active == True).offset(skip).limit(limit).all()
     
-    def delete_user(self, user: User) -> bool:
+    def get_by_xp_range(self, min_xp: int, max_xp: int):
         """
-        Eliminar un usuario
+        Get users by XP range
         
         Args:
-            user: Usuario a eliminar
+            min_xp: Minimum XP
+            max_xp: Maximum XP
             
         Returns:
-            True si se eliminó exitosamente
+            List of users
         """
-        self.db.delete(user)
-        self.db.commit()
-        return True
+        return self.db.query(User).filter(
+            User.xp_total >= min_xp,
+            User.xp_total <= max_xp
+        ).all()
     
-    def user_exists(self, username: str = None, email: str = None) -> bool:
+    def get_by_level(self, level: int):
         """
-        Verificar si un usuario existe por nombre de usuario o email
+        Get users by level
         
         Args:
-            username: Nombre de usuario (opcional)
-            email: Email (opcional)
+            level: User level
             
         Returns:
-            True si el usuario existe, False en caso contrario
+            List of users
         """
-        if username:
-            return self.db.query(User).filter(User.username == username).first() is not None
-        if email:
-            return self.db.query(User).filter(User.email == email).first() is not None
-        return False
+        return self.db.query(User).filter(User.level_current == level).all()
