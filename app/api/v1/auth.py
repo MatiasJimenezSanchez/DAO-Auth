@@ -6,56 +6,37 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 
-# Importaciones corregidas
-from app.models import User
-from app.schemas.user import TokenData, Token, UserCreateWithLocation, UserOut
+# --- IMPORTS CORREGIDOS ---
+from app.models.user import User
+# Usamos UserCreate unificado en lugar de UserCreateWithLocation
+from app.schemas.user import TokenData, Token, UserCreate, UserOut
 from app.db.session import get_db
-from app.services.user_service import UserService  # IMPORTACIÓN DE UserService CORREGIDA
-
+from app.services.user_service import UserService
 
 SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token")
 router = APIRouter()
 
+# --- UTILS (Manteniendo lógica existente) ---
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verifica que la contraseña coincida con el hash"""
     try:
-        plain_bytes = plain_password.encode('utf-8')[:72]
+        plain_bytes = plain_password.encode('utf-8')
         hashed_bytes = hashed_password.encode('utf-8')
         return bcrypt.checkpw(plain_bytes, hashed_bytes)
-    except Exception as e:
-        print(f"[ERROR] verify_password: {e}")
+    except Exception:
         return False
 
-def get_password_hash(password: str) -> str:
-    """Genera un hash bcrypt de la contraseña"""
-    if password is None:
-        raise ValueError("password cannot be None")
-    password_bytes = password.encode('utf-8')[:72]
-    salt = bcrypt.gensalt()
-    hashed = bcrypt.hashpw(password_bytes, salt)
-    return hashed.decode('utf-8')
-
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
-    """Crea un JWT token"""
     to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
-    else:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
-def get_user(db: Session, username: str):
-    """Busca un usuario en la base de datos"""
-    return db.query(User).filter(User.username == username).first()
-
+# --- DEPENDENCIES ---
 async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    """Obtiene el usuario actual a partir del token JWT"""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Credenciales inválidas",
@@ -68,24 +49,33 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
             raise credentials_exception
     except JWTError:
         raise credentials_exception
-    user = get_user(db, username=username)
+        
+    user = db.query(User).filter(User.username == username).first()
     if user is None:
         raise credentials_exception
     return user
 
-@router.post("/register-full", response_model=UserOut, status_code=201)
-def register_extended(payload: UserCreateWithLocation, db: Session = Depends(get_db)):
-    """
-    Endpoint para registrar un usuario extendido con ubicación y gamificación.
+# --- ENDPOINTS ---
+
+@router.post("/token", response_model=Token)
+async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.username == form_data.username).first()
+    if not user or not verify_password(form_data.password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Usuario o contraseña incorrectos",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     
-    - **username**: Nombre de usuario único
-    - **email**: Correo electrónico único
-    - **password**: Contraseña (se guardará hasheada)
-    - **full_name**: Nombre completo (opcional)
-    - **disabled**: Si el usuario está deshabilitado (opcional, default: False)
-    - **city_id, province_id, region_id**: Información de ubicación
-    - **accepts_terms**: Aceptación de términos
-    - **accepts_privacy**: Aceptación de privacidad
+    access_token = create_access_token(data={"sub": user.username})
+    return {"access_token": access_token, "token_type": "bearer"}
+
+@router.post("/register", response_model=UserOut, status_code=201)
+def register(payload: UserCreate, db: Session = Depends(get_db)):
     """
-    service = UserService(db)  # Instancia correctamente UserService
-    return service.register_user_extended(payload)
+    Registro unificado de usuarios (Estudiantes/Talento).
+    Soporta datos básicos y perfil extendido (ubicación, género, etc).
+    """
+    service = UserService(db)
+    # El servicio maneja la creación unificada
+    return service.create_user(payload)
