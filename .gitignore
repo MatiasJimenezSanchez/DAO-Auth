@@ -22,3 +22,5 @@ alembic_migrations.db
 # Custom
 backups_*/
 *.backup
+backup_*/
+problematic_migrations_backup/
