@@ -1,9 +1,24 @@
-venv/
+# Python
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
-*.db
+*.py[cod]
+.venv
+venv/
 .env
-.idea/
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Database
+*.db
+*.sqlite
+alembic_migrations.db
+
+# IDE
 .vscode/
+.idea/
+
+# Custom
+backups_*/
+*.backup
