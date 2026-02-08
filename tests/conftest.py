@@ -1,81 +1,54 @@
-"""
-Pytest Configuration and Fixtures
-Versión corregida con SQLite en memoria para tests
-"""
 import pytest
+from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from fastapi.testclient import TestClient
+from sqlalchemy.pool import StaticPool
 
-from app.db.base import Base
-from app.db.session import get_db
 from app.main import app
+from app.db.session import get_db
+from app.db.base import Base
 
-# ============================================
-# FIX: Usar SQLite en memoria para tests
-# ============================================
-# Esto evita depender de PostgreSQL durante las pruebas
-SQLALCHEMY_TEST_DATABASE_URL = "sqlite:///./test_aurum.db"
+# Usar SQLite en memoria con StaticPool para evitar errores de hilos
+SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
 
 engine = create_engine(
-    SQLALCHEMY_TEST_DATABASE_URL,
-    connect_args={"check_same_thread": False}  # Solo para SQLite
+    SQLALCHEMY_DATABASE_URL,
+    connect_args={"check_same_thread": False},
+    poolclass=StaticPool, # IMPORTANTE: Mantiene la misma conexión en memoria
 )
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 @pytest.fixture(scope="function")
 def db_session():
     """
-    Crea una sesión de base de datos para cada test
+    Crea una base de datos limpia para CADA test.
     """
-    # Crear todas las tablas
+    # 1. Crear tablas
     Base.metadata.create_all(bind=engine)
     
-    # Crear sesión
+    # 2. Crear sesión
     db = TestingSessionLocal()
     
     try:
         yield db
     finally:
         db.close()
-        # Limpiar la base de datos después de cada test
+        # 3. Destruir tablas al finalizar el test
         Base.metadata.drop_all(bind=engine)
-
 
 @pytest.fixture(scope="function")
 def client(db_session):
     """
-    Crea un cliente de prueba de FastAPI
+    Cliente de pruebas con override de dependencia de DB.
     """
     def override_get_db():
         try:
             yield db_session
         finally:
             pass
-    
+            
     app.dependency_overrides[get_db] = override_get_db
-    
-    with TestClient(app) as test_client:
-        yield test_client
-    
+    with TestClient(app) as c:
+        yield c
     app.dependency_overrides.clear()
-
-
-@pytest.fixture
-def empresa_data():
-    """
-    Datos de prueba para crear una empresa
-    """
-    return {
-        "nombre_empresa": "Tech Innovations EC",
-        "slug": "tech-innovations-ec",
-        "tipo_empresa": "real_nacional",
-        "industria": "Tecnología",
-        "descripcion_corta": "Empresa de tecnología ecuatoriana líder en innovación",
-        "email_contacto": "contacto@techinnovations.ec",
-        "pais": "Ecuador",
-        "ciudad": "Quito",
-        "es_partner_activo": True,
-        "tipo_partnership": "premium"
-    }
