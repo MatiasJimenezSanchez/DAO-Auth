@@ -5,6 +5,7 @@ from app.db.session import get_db
 from app.services.simulation_service import SimulationService
 from app.schemas.simulations import SimulationCreate, SimulationUpdate, SimulationOut
 
+# FIX: Router responde a ambas rutas
 router = APIRouter()
 
 @router.post("", response_model=SimulationOut, status_code=status.HTTP_201_CREATED)

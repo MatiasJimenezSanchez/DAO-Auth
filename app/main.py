@@ -8,6 +8,8 @@ import app.models.user
 import app.models.catalog
 import app.models.university
 import app.models.empresa
+import app.models.usuarios_empresa  # IMPORTAR NUEVO MODELO
+import app.models.simulations
 
 # Imports de Routers
 from app.api.v1 import auth
@@ -35,15 +37,17 @@ def root():
     return {"status": "online", "message": "Aurum API v1.0"}
 
 # =============================================================================
-# REGISTRO DE ROUTERS - CONFIGURACIÓN CANÓNICA
+# REGISTRO DE ROUTERS - CONFIGURACIÓN CANÓNICA CORREGIDA
 # =============================================================================
-# IMPORTANTE: Los routers usan @router.post("") sin slash
-# El prefix aquí define la ruta completa
+# IMPORTANTE: 
+# - Los routers usan @router.get("") sin slash
+# - El prefix aquí define la ruta completa
+# - Para /me: está en users router → /api/v1/users/me
 
 # Auth (sin subrutas específicas)
 app.include_router(auth.router, prefix="/api/v1", tags=["auth"])
 
-# Users
+# Users (IMPORTANTE: /me está aquí → /api/v1/users/me)
 app.include_router(users.router, prefix="/api/v1/users", tags=["users"])
 
 # Empresas (español)

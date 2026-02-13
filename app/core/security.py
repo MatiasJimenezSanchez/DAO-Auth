@@ -1,40 +1,29 @@
 from datetime import datetime, timedelta
 from typing import Optional
-from jose import JWTError, jwt
-import bcrypt
+from jose import jwt
+from passlib.context import CryptContext
+from app.core.config import settings # IMPORTANTE: Fuente única de verdad
 
-# Configuración
-SECRET_KEY = "tu-clave-secreta-super-segura-cambiar-en-produccion"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+# Usar configuración centralizada
+SECRET_KEY = settings.SECRET_KEY
+ALGORITHM = settings.ALGORITHM
+ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
 
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verifica el password usando bcrypt puro"""
-    if not plain_password or not hashed_password:
-        return False
-    # Bcrypt requiere bytes
-    return bcrypt.checkpw(
-        plain_password.encode('utf-8'), 
-        hashed_password.encode('utf-8')
-    )
+# Configuración Password (PBKDF2 para compatibilidad total)
+pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
-def get_password_hash(password: str) -> str:
-    """Genera hash usando bcrypt puro"""
-    # Generar salt y hash
-    pwd_bytes = password.encode('utf-8')
-    salt = bcrypt.gensalt()
-    hashed = bcrypt.hashpw(pwd_bytes, salt)
-    return hashed.decode('utf-8')
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
 
-# Alias de compatibilidad
-hash_password = get_password_hash
+def get_password_hash(password):
+    return pwd_context.hash(password)
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
+        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt

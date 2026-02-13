@@ -1,38 +1,40 @@
-from pydantic import BaseModel, EmailStr, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
 from datetime import datetime
-from decimal import Decimal
 
 class EmpresaBase(BaseModel):
-    nombre_empresa: str
-    slug: str
+    nombre_empresa: str = Field(..., min_length=1, max_length=200)
+    slug: str = Field(..., min_length=1, max_length=300)
     tipo_empresa: str = "real_nacional"
-    industria: str = "Tecnología"
-    descripcion_corta: Optional[str] = None
+    industria: str
     pais: str = "Ecuador"
+    ciudad: Optional[str] = None
+    descripcion_corta: Optional[str] = None
 
 class EmpresaCreate(EmpresaBase):
+    """Schema para crear - verificado NO permitido"""
     pass
 
 class EmpresaUpdate(BaseModel):
-    nombre_empresa: Optional[str] = None
+    nombre_empresa: Optional[str] = Field(None, max_length=200)
     descripcion_corta: Optional[str] = None
     pais: Optional[str] = None
     ciudad: Optional[str] = None
+    esta_activo: Optional[bool] = None
 
 class EmpresaOut(EmpresaBase):
     id: int
-    industria_secundaria: Optional[str] = None
-    descripcion_completa: Optional[str] = None
-    ciudad: Optional[str] = None
+    verificado: bool = False
     es_partner_activo: bool = False
     tipo_partnership: str = "basico"
-    verificado: bool = False
     total_simulaciones: int = 0
     total_usuarios_inscritos: int = 0
-    calificacion_promedio: Decimal = Decimal("0.0")
-    esta_activo: bool = True
-    creado_en: datetime
-    actualizado_en: Optional[datetime] = None
     
+    # FIX: float limpio, sin Decimal ni strings raros
+    calificacion_promedio: float = 0.0
+    
+    esta_activo: bool = True
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
     model_config = ConfigDict(from_attributes=True)

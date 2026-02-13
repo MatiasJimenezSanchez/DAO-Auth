@@ -1,109 +1,75 @@
-"""
-Users Endpoints
-Refactored to use UserService (Service Layer)
-NO direct database queries
-"""
-from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-
+from typing import List
 from app.db.session import get_db
-from app.schemas.user import UserOut, UserUpdate
+from app.models.user import User
+from app.schemas.user import UserCreate, UserUpdate, UserOut
 from app.services.user_service import UserService
-from app.api.v1.auth import get_current_user
+from app.core.auth import get_current_user
 
 router = APIRouter()
 
-# CORRECCIÓN: Quitamos "/users" del path porque main.py ya agrega el prefijo "/api/v1/users"
-# Antes: /api/v1/users/users -> Ahora: /api/v1/users/
-
-@router.get("/", response_model=List[UserOut])
-def list_users(
-    skip: int = 0,
-    limit: int = 100,
-    db: Session = Depends(get_db)
-):
+@router.post("", response_model=UserOut, status_code=201)
+def create_user(user: UserCreate, db: Session = Depends(get_db)):
     service = UserService(db)
-    users = service.get_active_users(skip=skip, limit=limit)
-    return users
+    return service.create_user(user)
 
+@router.get("", response_model=List[UserOut])
+def list_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    return db.query(User).offset(skip).limit(limit).all()
+
+@router.get("/me", response_model=UserOut)
+def get_current_user_info(current_user: User = Depends(get_current_user)):
+    return current_user
 
 @router.get("/{user_id}", response_model=UserOut)
-def get_user(user_id: int, db: Session = Depends(get_db)):
-    service = UserService(db)
-    user = service.get_user_by_id(user_id)
-    
+def read_user(user_id: int, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"User with id {user_id} not found"
-        )
-    
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
     return user
-
 
 @router.patch("/{user_id}", response_model=UserOut)
+@router.put("/{user_id}", response_model=UserOut)
 def update_user(
-    user_id: int,
-    user_data: UserUpdate,
-    db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    user_id: int, 
+    user_data: UserUpdate, 
+    db: Session = Depends(get_db), 
+    current_user: User = Depends(get_current_user)
 ):
-    if current_user.id != user_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You can only update your own profile"
-        )
-    
-    service = UserService(db)
-    user = service.update_user(user_id, user_data)
-    
+    # 1. Verificar existencia (404)
+    user = db.query(User).filter(User.id == user_id).first()
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"User with id {user_id} not found"
-        )
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
     
+    # 2. Verificar autorización (403) - FIX DE SEGURIDAD
+    if current_user.id != user_id:
+        raise HTTPException(status_code=403, detail="No autorizado para modificar este usuario")
+    
+    # 3. Actualizar
+    update_data = user_data.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(user, key, value)
+    
+    db.commit()
+    db.refresh(user)
     return user
 
-
-@router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{user_id}", status_code=204)
 def delete_user(
-    user_id: int,
-    db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    user_id: int, 
+    db: Session = Depends(get_db), 
+    current_user: User = Depends(get_current_user)
 ):
+    # 1. Verificar existencia (404)
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+        
+    # 2. Verificar autorización (403) - FIX DE SEGURIDAD
     if current_user.id != user_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You can only deactivate your own account"
-        )
+        raise HTTPException(status_code=403, detail="No autorizado para eliminar este usuario")
     
-    service = UserService(db)
-    user = service.deactivate_user(user_id)
-    
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"User with id {user_id} not found"
-        )
-    
+    db.delete(user)
+    db.commit()
     return None
-
-
-@router.post("/{user_id}/award-xp", response_model=UserOut)
-def award_user_xp(
-    user_id: int,
-    xp_amount: int,
-    db: Session = Depends(get_db)
-):
-    service = UserService(db)
-    user = service.award_xp(user_id, xp_amount)
-    
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"User with id {user_id} not found"
-        )
-    
-    return user
