@@ -10,6 +10,8 @@ import app.models.university
 import app.models.empresa
 import app.models.usuarios_empresa  # IMPORTAR NUEVO MODELO
 import app.models.simulations
+import app.models.skill
+import app.models.user_progress
 
 # Imports de Routers
 from app.api.v1 import auth
@@ -19,6 +21,8 @@ from app.api.v1 import empresas
 from app.api.v1 import company_users
 from app.api.v1 import simulations
 from app.api.v1 import users
+from app.api.v1 import skills
+from app.api.v1 import progress
 
 from app.db.session import get_db
 
@@ -68,6 +72,10 @@ app.include_router(company_users.router, prefix="/api/v1", tags=["company-users"
 # =============================================================================
 # ENDPOINT DE LOGIN (Token OAuth2)
 # =============================================================================
+app.include_router(skills.router, prefix="/api/v1", tags=["skills"])
+
+app.include_router(progress.router, prefix="/api/v1", tags=["progress"])
+
 @app.post("/token", response_model=Token)
 async def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(), 
