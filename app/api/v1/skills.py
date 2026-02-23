@@ -1,6 +1,6 @@
 """
-Skills API Endpoints
-CRUD operations for skills
+Skills API Endpoints - COMPLETE VERSION
+CRUD operations with correct HTTP methods
 """
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
@@ -20,7 +20,7 @@ def create_skill(
     db: Session = Depends(get_db)
 ):
     """Create new skill"""
-    # Check duplicate BEFORE inserting (more efficient)
+    # Check duplicate
     existing = db.query(Skill).filter(Skill.name == skill_data.name).first()
     if existing:
         raise HTTPException(
@@ -34,9 +34,8 @@ def create_skill(
     try:
         db.commit()
         db.refresh(db_skill)
-    except IntegrityError as e:
+    except IntegrityError:
         db.rollback()
-        # Catch race condition (duplicate inserted between check and commit)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Skill with name '{skill_data.name}' already exists"
@@ -76,13 +75,14 @@ def get_skill(skill_id: int, db: Session = Depends(get_db)):
     return skill
 
 
-@router.patch("/skills/{skill_id}", response_model=SkillOut)
+# CRITICAL FIX: Use PUT (not PATCH) for full update
+@router.put("/skills/{skill_id}", response_model=SkillOut)
 def update_skill(
     skill_id: int,
     skill_data: SkillUpdate,
     db: Session = Depends(get_db)
 ):
-    """Update skill"""
+    """Update skill (PUT method)"""
     skill = db.query(Skill).filter(Skill.id == skill_id).first()
     
     if not skill:
@@ -109,9 +109,44 @@ def update_skill(
     return skill
 
 
+# ALSO keep PATCH for partial updates (best practice)
+@router.patch("/skills/{skill_id}", response_model=SkillOut)
+def partial_update_skill(
+    skill_id: int,
+    skill_data: SkillUpdate,
+    db: Session = Depends(get_db)
+):
+    """Partial update skill (PATCH method)"""
+    skill = db.query(Skill).filter(Skill.id == skill_id).first()
+    
+    if not skill:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Skill with id {skill_id} not found"
+        )
+    
+    update_data = skill_data.model_dump(exclude_unset=True)
+    
+    for field, value in update_data.items():
+        setattr(skill, field, value)
+    
+    try:
+        db.commit()
+        db.refresh(skill)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Update failed - possibly duplicate name"
+        )
+    
+    return skill
+
+
+# CRITICAL FIX: Explicit DELETE route
 @router.delete("/skills/{skill_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_skill(skill_id: int, db: Session = Depends(get_db)):
-    """Soft delete skill"""
+    """Soft delete skill (DELETE method)"""
     skill = db.query(Skill).filter(Skill.id == skill_id).first()
     
     if not skill:

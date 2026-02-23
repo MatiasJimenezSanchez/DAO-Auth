@@ -1,6 +1,6 @@
 """
-Progress Tests - FIXED VERSION
-Business logic tests for user simulation progress with robust error handling
+Progress Tests - COMPLETE VERSION
+All fixtures include short_description for Simulation
 """
 import pytest
 from fastapi import status
@@ -38,7 +38,7 @@ def auth_user(client):
 
 @pytest.fixture
 def test_simulation(client, db_session):
-    """Create a test simulation"""
+    """Create a test simulation with ALL required fields"""
     from app.models.simulations import Simulation
     from app.models.empresa import Empresa
     from app.models.catalog import ContentCategory
@@ -61,13 +61,13 @@ def test_simulation(client, db_session):
     db_session.add(category)
     db_session.commit()
     
-    # Create simulation
+    # CRITICAL FIX: Include short_description (required)
     simulation = Simulation(
         company_id=company.id,
         category_id=category.id,
         title="Test Simulation",
         slug="test-simulation-progress",
-        short_description="Test description",
+        short_description="Complete test description for progress tracking",  # FIXED
         difficulty_level="intermediate",
         state="published"
     )
@@ -93,11 +93,6 @@ class TestProgressFlow:
             json=progress_data,
             headers=auth_user["headers"]
         )
-        
-        # DEBUG: Print if not 201
-        if res.status_code != 201:
-            print(f"ERROR: Expected 201, got {res.status_code}")
-            print(f"Response: {res.text}")
         
         assert res.status_code == 201, f"Expected 201, got {res.status_code}: {res.text}"
         data = res.json()
@@ -135,7 +130,6 @@ class TestProgressFlow:
     
     def test_update_progress(self, client, auth_user, test_simulation):
         """Test: Update progress"""
-        # Start simulation
         progress_data = {
             "user_id": auth_user["user_id"],
             "simulation_id": test_simulation.id
@@ -147,12 +141,10 @@ class TestProgressFlow:
             headers=auth_user["headers"]
         )
         
-        # CRITICAL FIX: Assert 201 BEFORE accessing json()
         assert res.status_code == 201, f"Start failed: {res.status_code} - {res.text}"
-        
         progress_id = res.json()["id"]
         
-        # Update to in_progress
+        # Update
         update_data = {
             "status": "in_progress",
             "completion_percentage": 50.0,
@@ -174,7 +166,6 @@ class TestProgressFlow:
     
     def test_complete_simulation(self, client, auth_user, test_simulation):
         """Test: Complete simulation auto-sets completion_percentage"""
-        # Start
         progress_data = {
             "user_id": auth_user["user_id"],
             "simulation_id": test_simulation.id
@@ -210,7 +201,6 @@ class TestProgressFlow:
     
     def test_get_user_progress_list(self, client, auth_user, test_simulation):
         """Test: Get all progress for user"""
-        # Start simulation
         progress_data = {
             "user_id": auth_user["user_id"],
             "simulation_id": test_simulation.id

@@ -13,8 +13,8 @@ TEST_DB_FILE = "./test_final.db"
 SQLALCHEMY_DATABASE_URL = f"sqlite:///{TEST_DB_FILE}"
 
 engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, 
-    connect_args={"check_same_thread": False} 
+    SQLALCHEMY_DATABASE_URL,
+    connect_args={"check_same_thread": False}
 )
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -36,35 +36,42 @@ def db_session():
     yield session
     session.close()
     connection.close()
-    
+
     # LIMPIEZA TOTAL: Borrar datos de TODAS las tablas entre tests
     with engine.connect() as conn:
         with conn.begin():
-            # Desactivar FKs para borrar sin preocuparse del orden
+            # Desactivar FKs
             conn.execute(text("PRAGMA foreign_keys = OFF;"))
-            
-            # Lista completa de tablas a limpiar
+
+            # CRITICAL FIX: Lista completa incluyendo skills y user_progress
             tables_to_clean = [
-                "usuarios_empresa", 
-                "simulations", 
-                "users", 
+                "user_simulation_progress",  # FIXED: Added
+                "usuarios_empresa",
+                "simulations",
+                "simulation_modules",
+                "module_tasks",
+                "task_resources",
+                "model_answers",
+                "users",
                 "empresas",
-                # Tablas de catálogos (las que causaban el fallo)
-                "cities", 
-                "provinces", 
-                "regions", 
-                "industries", 
-                "skills", 
-                "content_categories", 
-                "universities"
+                # Catálogos
+                "cities",
+                "provinces",
+                "regions",
+                "industries",
+                "skills",  # FIXED: Added
+                "skills_catalog",  # FIXED: Added
+                "content_categories",
+                "universities",
+                "careers"
             ]
-            
+
             for table in tables_to_clean:
                 try:
                     conn.execute(text(f"DELETE FROM {table}"))
                 except Exception:
-                    pass # Ignorar si la tabla no existe aun
-            
+                    pass  # Ignorar si no existe
+
             conn.execute(text("PRAGMA foreign_keys = ON;"))
 
 @pytest.fixture(scope="function")
