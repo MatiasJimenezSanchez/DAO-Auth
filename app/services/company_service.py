@@ -66,3 +66,4 @@ class CompanyService:
             .limit(limit)
             .all()
         )
+
