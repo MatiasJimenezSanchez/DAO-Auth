@@ -1,6 +1,6 @@
 """
-Progress Tests
-Business logic tests for user simulation progress
+Progress Tests - FIXED VERSION
+Business logic tests for user simulation progress with robust error handling
 """
 import pytest
 from fastapi import status
@@ -18,6 +18,7 @@ def auth_user(client):
     }
     
     res = client.post("/api/v1/register", json=user_data)
+    assert res.status_code == 201, f"User registration failed: {res.text}"
     user_id = res.json()["id"]
     
     # Login
@@ -25,6 +26,7 @@ def auth_user(client):
         "username": "progress_user",
         "password": "Password123!"
     })
+    assert login_res.status_code == 200, f"Login failed: {login_res.text}"
     token = login_res.json()["access_token"]
     
     return {
@@ -43,8 +45,8 @@ def test_simulation(client, db_session):
     
     # Create company
     company = Empresa(
-        nombre_empresa="Test Co",
-        slug="testco",
+        nombre_empresa="Test Co Progress",
+        slug="testco-progress",
         industria="Tech",
         pais="Ecuador"
     )
@@ -53,8 +55,8 @@ def test_simulation(client, db_session):
     
     # Create category
     category = ContentCategory(
-        name="STEM",
-        slug="stem"
+        name="STEM Progress",
+        slug="stem-progress"
     )
     db_session.add(category)
     db_session.commit()
@@ -64,7 +66,7 @@ def test_simulation(client, db_session):
         company_id=company.id,
         category_id=category.id,
         title="Test Simulation",
-        slug="test-simulation",
+        slug="test-simulation-progress",
         short_description="Test description",
         difficulty_level="intermediate",
         state="published"
@@ -92,7 +94,12 @@ class TestProgressFlow:
             headers=auth_user["headers"]
         )
         
-        assert res.status_code == 201
+        # DEBUG: Print if not 201
+        if res.status_code != 201:
+            print(f"ERROR: Expected 201, got {res.status_code}")
+            print(f"Response: {res.text}")
+        
+        assert res.status_code == 201, f"Expected 201, got {res.status_code}: {res.text}"
         data = res.json()
         
         assert data["user_id"] == auth_user["user_id"]
@@ -109,21 +116,22 @@ class TestProgressFlow:
         }
         
         # Start first time
-        client.post(
+        res1 = client.post(
             "/api/v1/progress/start",
             json=progress_data,
             headers=auth_user["headers"]
         )
+        assert res1.status_code == 201, f"First start failed: {res1.text}"
         
         # Try again
-        res = client.post(
+        res2 = client.post(
             "/api/v1/progress/start",
             json=progress_data,
             headers=auth_user["headers"]
         )
         
-        assert res.status_code == 400
-        assert "already started" in res.json()["detail"].lower()
+        assert res2.status_code == 400
+        assert "already started" in res2.json()["detail"].lower()
     
     def test_update_progress(self, client, auth_user, test_simulation):
         """Test: Update progress"""
@@ -138,6 +146,10 @@ class TestProgressFlow:
             json=progress_data,
             headers=auth_user["headers"]
         )
+        
+        # CRITICAL FIX: Assert 201 BEFORE accessing json()
+        assert res.status_code == 201, f"Start failed: {res.status_code} - {res.text}"
+        
         progress_id = res.json()["id"]
         
         # Update to in_progress
@@ -153,7 +165,7 @@ class TestProgressFlow:
             headers=auth_user["headers"]
         )
         
-        assert res.status_code == 200
+        assert res.status_code == 200, f"Update failed: {res.status_code} - {res.text}"
         data = res.json()
         
         assert data["status"] == "in_progress"
@@ -173,6 +185,8 @@ class TestProgressFlow:
             json=progress_data,
             headers=auth_user["headers"]
         )
+        
+        assert res.status_code == 201, f"Start failed: {res.text}"
         progress_id = res.json()["id"]
         
         # Complete
@@ -187,7 +201,7 @@ class TestProgressFlow:
             headers=auth_user["headers"]
         )
         
-        assert res.status_code == 200
+        assert res.status_code == 200, f"Complete failed: {res.text}"
         data = res.json()
         
         assert data["status"] == "completed"
@@ -202,11 +216,13 @@ class TestProgressFlow:
             "simulation_id": test_simulation.id
         }
         
-        client.post(
+        res = client.post(
             "/api/v1/progress/start",
             json=progress_data,
             headers=auth_user["headers"]
         )
+        
+        assert res.status_code == 201, f"Start failed: {res.text}"
         
         # Get progress list
         res = client.get(

@@ -68,4 +68,56 @@ class CompanyService:
         )
 
 
+    def get_real_stats(self, company_id: int) -> dict:
+        """
+        Get REAL company statistics from database
+        
+        Args:
+            company_id: Company ID
+            
+        Returns:
+            Dict with real statistics
+        """
+        from app.models.usuarios_empresa import UsuarioEmpresa
+        from app.models.user_progress import UserSimulationProgress
+        from app.models.simulations import Simulation
+        from sqlalchemy import func, distinct
+        from decimal import Decimal
+        
+        company = self.get_company(company_id)
+        
+        # Real count of simulations
+        total_simulations = self.db.query(func.count(Simulation.id)).filter(
+            Simulation.company_id == company_id,
+            Simulation.state == 'published'
+        ).scalar() or 0
+        
+        # Real count of company users (using empresa_id)
+        total_company_users = self.db.query(func.count(UsuarioEmpresa.id)).filter(
+            UsuarioEmpresa.empresa_id == company_id,
+            UsuarioEmpresa.is_active == True
+        ).scalar() or 0
+        
+        # Real count of UNIQUE users enrolled
+        total_users_enrolled = self.db.query(
+            func.count(distinct(UserSimulationProgress.user_id))
+        ).join(
+            Simulation, UserSimulationProgress.simulation_id == Simulation.id
+        ).filter(
+            Simulation.company_id == company_id
+        ).scalar() or 0
+        
+        # Average rating
+        avg_rating = company.calificacion_promedio or Decimal("0.0")
+        
+        return {
+            "company_id": company.id,
+            "nombre": company.nombre_empresa,
+            "total_simulaciones": total_simulations,
+            "total_company_users": total_company_users,
+            "total_usuarios_inscritos": total_users_enrolled,
+            "calificacion_promedio": float(avg_rating),
+            "es_partner": company.es_partner_activo,
+            "verificado": company.verificado
+        }
 

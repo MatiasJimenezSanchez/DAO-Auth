@@ -1,6 +1,7 @@
 """
-Dashboard Tests
+Dashboard Tests - FIXED VERSION
 Business logic tests for company dashboard statistics
+CRITICAL FIX: empresa_id (not company_id) in UsuarioEmpresa
 """
 import pytest
 from fastapi import status
@@ -12,7 +13,7 @@ def seed_company_data(client, db_session):
     from app.models.empresa import Empresa
     from app.models.simulations import Simulation
     from app.models.catalog import ContentCategory
-    from app.models.usuarios_empresa import CompanyUser
+    from app.models.usuarios_empresa import UsuarioEmpresa  # Spanish model name
     from app.models.user_progress import UserSimulationProgress, ProgressStatus
     from app.models.user import User
     from app.services.user_service import UserService
@@ -38,7 +39,7 @@ def seed_company_data(client, db_session):
         company_id=company.id,
         category_id=category.id,
         title="Sim 1",
-        slug="sim-1",
+        slug="sim-1-dash",
         short_description="Test",
         state="published"
     )
@@ -47,7 +48,7 @@ def seed_company_data(client, db_session):
         company_id=company.id,
         category_id=category.id,
         title="Sim 2",
-        slug="sim-2",
+        slug="sim-2-dash",
         short_description="Test",
         state="published"
     )
@@ -56,7 +57,7 @@ def seed_company_data(client, db_session):
         company_id=company.id,
         category_id=category.id,
         title="Sim 3",
-        slug="sim-3",
+        slug="sim-3-dash",
         short_description="Test",
         state="draft"  # Not counted
     )
@@ -64,40 +65,39 @@ def seed_company_data(client, db_session):
     db_session.add_all([sim1, sim2, sim3])
     db_session.commit()
     
-    # Create 2 company users (admins)
+    # Create 2 regular users first (for User table)
     service = UserService(db_session)
     
     user1 = User(
-        username="admin1",
-        email="admin1@test.com",
+        username="admin1_dash",
+        email="admin1_dash@test.com",
         hashed_password=service.hash_password("pass"),
         full_name="Admin One"
     )
     
     user2 = User(
-        username="admin2",
-        email="admin2@test.com",
+        username="admin2_dash",
+        email="admin2_dash@test.com",
         hashed_password=service.hash_password("pass"),
         full_name="Admin Two"
     )
     
     db_session.add_all([user1, user2])
     db_session.commit()
+    db_session.refresh(user1)
+    db_session.refresh(user2)
     
-    company_user1 = CompanyUser(
-        company_id=company.id,
-        email="admin1@test.com",
-        password_hash=service.hash_password("pass"),
-        full_name="Admin One",
+    # CRITICAL FIX: Use empresa_id (Spanish) not company_id
+    company_user1 = UsuarioEmpresa(
+        user_id=user1.id,
+        empresa_id=company.id,  # FIXED: was company_id
         role="admin",
         is_active=True
     )
     
-    company_user2 = CompanyUser(
-        company_id=company.id,
-        email="admin2@test.com",
-        password_hash=service.hash_password("pass"),
-        full_name="Admin Two",
+    company_user2 = UsuarioEmpresa(
+        user_id=user2.id,
+        empresa_id=company.id,  # FIXED: was company_id
         role="editor",
         is_active=True
     )
@@ -109,8 +109,8 @@ def seed_company_data(client, db_session):
     students = []
     for i in range(5):
         student = User(
-            username=f"student{i}",
-            email=f"student{i}@test.com",
+            username=f"student{i}_dash",
+            email=f"student{i}_dash@test.com",
             hashed_password=service.hash_password("pass"),
             full_name=f"Student {i}"
         )
@@ -118,6 +118,10 @@ def seed_company_data(client, db_session):
         students.append(student)
     
     db_session.commit()
+    
+    # Refresh to get IDs
+    for student in students:
+        db_session.refresh(student)
     
     # Enroll students in simulations
     # Student 0,1,2 -> Sim 1
@@ -157,24 +161,35 @@ class TestDashboardStats:
         
         # Get stats
         res = client.get(f"/api/v1/empresas/{company_id}/stats")
-        assert res.status_code == 200
+        
+        # DEBUG: Print if not 200
+        if res.status_code != 200:
+            print(f"ERROR: Stats endpoint returned {res.status_code}")
+            print(f"Response: {res.text}")
+        
+        assert res.status_code == 200, f"Stats failed: {res.status_code} - {res.text}"
         
         data = res.json()
         
         # Verify counts match seeded data
-        assert data["total_simulaciones"] == seed_company_data["expected_simulations"]
-        assert data["total_company_users"] == seed_company_data["expected_company_users"]
-        assert data["total_usuarios_inscritos"] == seed_company_data["expected_enrolled_users"]
+        assert data["total_simulaciones"] == seed_company_data["expected_simulations"], \
+            f"Expected {seed_company_data['expected_simulations']} simulations, got {data['total_simulaciones']}"
+        
+        assert data["total_company_users"] == seed_company_data["expected_company_users"], \
+            f"Expected {seed_company_data['expected_company_users']} company users, got {data['total_company_users']}"
+        
+        assert data["total_usuarios_inscritos"] == seed_company_data["expected_enrolled_users"], \
+            f"Expected {seed_company_data['expected_enrolled_users']} enrolled users, got {data['total_usuarios_inscritos']}"
     
     def test_stats_exclude_inactive(self, client, seed_company_data, db_session):
         """Test: Stats exclude inactive company users"""
-        from app.models.usuarios_empresa import CompanyUser
+        from app.models.usuarios_empresa import UsuarioEmpresa
         
         company_id = seed_company_data["company_id"]
         
         # Deactivate one company user
-        company_user = db_session.query(CompanyUser).filter(
-            CompanyUser.company_id == company_id
+        company_user = db_session.query(UsuarioEmpresa).filter(
+            UsuarioEmpresa.empresa_id == company_id
         ).first()
         
         company_user.is_active = False
@@ -182,6 +197,7 @@ class TestDashboardStats:
         
         # Get stats
         res = client.get(f"/api/v1/empresas/{company_id}/stats")
+        assert res.status_code == 200
         data = res.json()
         
         # Should now show 1 instead of 2

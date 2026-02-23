@@ -1,6 +1,6 @@
 """
-Skills Tests
-Integration tests for Skills CRUD
+Skills Tests - FIXED VERSION
+Integration tests for Skills CRUD with robust error handling
 """
 import pytest
 from fastapi import status
@@ -18,7 +18,13 @@ class TestSkillsCRUD:
         }
         
         res = client.post("/api/v1/skills", json=skill_data)
-        assert res.status_code == 201
+        
+        # DEBUG: Print response if not 201
+        if res.status_code != 201:
+            print(f"ERROR: Expected 201, got {res.status_code}")
+            print(f"Response: {res.text}")
+        
+        assert res.status_code == 201, f"Expected 201, got {res.status_code}: {res.text}"
         
         data = res.json()
         assert data["name"] == "Python Programming"
@@ -33,12 +39,13 @@ class TestSkillsCRUD:
         }
         
         # Create first
-        client.post("/api/v1/skills", json=skill_data)
+        res1 = client.post("/api/v1/skills", json=skill_data)
+        assert res1.status_code == 201, f"First creation failed: {res1.text}"
         
         # Try duplicate
-        res = client.post("/api/v1/skills", json=skill_data)
-        assert res.status_code == 400
-        assert "already exists" in res.json()["detail"].lower()
+        res2 = client.post("/api/v1/skills", json=skill_data)
+        assert res2.status_code == 400
+        assert "already exists" in res2.json()["detail"].lower()
     
     def test_list_skills(self, client):
         """Test: List skills"""
@@ -50,7 +57,8 @@ class TestSkillsCRUD:
         ]
         
         for skill in skills:
-            client.post("/api/v1/skills", json=skill)
+            res = client.post("/api/v1/skills", json=skill)
+            assert res.status_code == 201, f"Failed to create {skill['name']}: {res.text}"
         
         # List all
         res = client.get("/api/v1/skills")
@@ -79,6 +87,7 @@ class TestSkillsCRUD:
             "name": "Data Analysis",
             "category": "technical"
         })
+        assert res.status_code == 201
         skill_id = res.json()["id"]
         
         # Get by ID
@@ -93,6 +102,7 @@ class TestSkillsCRUD:
             "name": "Basic Excel",
             "category": "tool"
         })
+        assert res.status_code == 201
         skill_id = res.json()["id"]
         
         # Update
@@ -115,6 +125,7 @@ class TestSkillsCRUD:
             "name": "Obsolete Skill",
             "category": "technical"
         })
+        assert res.status_code == 201
         skill_id = res.json()["id"]
         
         # Delete
@@ -125,6 +136,16 @@ class TestSkillsCRUD:
         res = client.get("/api/v1/skills")
         skill_ids = [s["id"] for s in res.json()]
         assert skill_id not in skill_ids
+    
+    def test_get_nonexistent_skill_404(self, client):
+        """Test: Get nonexistent skill returns 404"""
+        res = client.get("/api/v1/skills/999999")
+        assert res.status_code == 404
+    
+    def test_update_nonexistent_skill_404(self, client):
+        """Test: Update nonexistent skill returns 404"""
+        res = client.patch("/api/v1/skills/999999", json={"name": "Ghost"})
+        assert res.status_code == 404
 
 
 if __name__ == "__main__":

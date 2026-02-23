@@ -4,6 +4,7 @@ CRUD operations for skills
 """
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from typing import List, Optional
 
 from app.db.session import get_db
@@ -19,7 +20,7 @@ def create_skill(
     db: Session = Depends(get_db)
 ):
     """Create new skill"""
-    # Check duplicate
+    # Check duplicate BEFORE inserting (more efficient)
     existing = db.query(Skill).filter(Skill.name == skill_data.name).first()
     if existing:
         raise HTTPException(
@@ -29,8 +30,17 @@ def create_skill(
     
     db_skill = Skill(**skill_data.model_dump())
     db.add(db_skill)
-    db.commit()
-    db.refresh(db_skill)
+    
+    try:
+        db.commit()
+        db.refresh(db_skill)
+    except IntegrityError as e:
+        db.rollback()
+        # Catch race condition (duplicate inserted between check and commit)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Skill with name '{skill_data.name}' already exists"
+        )
     
     return db_skill
 
@@ -86,8 +96,15 @@ def update_skill(
     for field, value in update_data.items():
         setattr(skill, field, value)
     
-    db.commit()
-    db.refresh(skill)
+    try:
+        db.commit()
+        db.refresh(skill)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Update failed - possibly duplicate name"
+        )
     
     return skill
 
