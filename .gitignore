@@ -61,3 +61,5 @@ boost_*.py
 temp_*.py
 *_fix.py
 force_fix_tests.py
+fix_auth_final.py
+force_fix_tests.py
