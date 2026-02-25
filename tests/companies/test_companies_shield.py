@@ -38,24 +38,24 @@ class TestCompaniesShield:
     def test_create_company_invalid_slug(self, client, base_company):
         payload = base_company.copy()
         payload["slug"] = "Invalid Slug With Spaces" # Slugs no deben tener espacios
-        # Depende de tu validador Pydantic, si no tienes regex, esto podría pasar como 201
+        # Depende de tu validador Pydantic, si no tienes regex, esto podrÃ­a pasar como 201
         # Este test verifica si somos estrictos
         res = client.post("/api/v1/empresas/", json=payload)
-        # Aceptamos 201 si el backend lo permite, pero idealmente debería ser 422
+        # Aceptamos 201 si el backend lo permite, pero idealmente deberÃ­a ser 422
         assert res.status_code in [201, 422] 
 
     def test_update_company_not_found(self, client, auth_header):
         res = client.put("/api/v1/empresas/999999", json={"nombre_empresa": "Ghost"}, headers=auth_header)
         assert res.status_code == 404
 
-    # --- LÓGICA DE NEGOCIO ---
+    # --- LÃ“GICA DE NEGOCIO ---
     def test_duplicate_company_name(self, client, base_company):
         # 1. Crear
         client.post("/api/v1/empresas/", json=base_company)
         # 2. Re-crear
         res = client.post("/api/v1/empresas/", json=base_company)
         assert res.status_code == 400
-        assert "ya existe" in res.json()["detail"].lower()
+        assert "already exists" in res.json()["detail"].lower()
 
     def test_search_functionality(self, client, base_company):
         client.post("/api/v1/empresas/", json=base_company)
@@ -73,10 +73,10 @@ class TestCompaniesShield:
         cid = create_res.json()["id"]
         
         # Intentar update sin headers
-        # Nota: Si tu endpoint actual es público (fallo de seguridad), esto dará 200.
-        # Si está protegido, dará 401. Este test audita eso.
+        # Nota: Si tu endpoint actual es pÃºblico (fallo de seguridad), esto darÃ¡ 200.
+        # Si estÃ¡ protegido, darÃ¡ 401. Este test audita eso.
         res = client.put(f"/api/v1/empresas/{cid}", json={"nombre_empresa": "Hacked Corp"})
         
         # Si da 200, es un FAIL de seguridad que debemos arreglar.
-        # Por ahora assert 200 para pasar el test actual, pero deberíamos cambiarlo a 401 en el futuro.
+        # Por ahora assert 200 para pasar el test actual, pero deberÃ­amos cambiarlo a 401 en el futuro.
         assert res.status_code in [200, 401] 

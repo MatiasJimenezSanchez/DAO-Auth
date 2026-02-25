@@ -6,7 +6,7 @@ from decimal import Decimal
 class SimulationBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=300)
     slug: str = Field(..., min_length=1, max_length=300)
-    short_description: str = Field(..., max_length=500)
+    short_description: str = Field(..., min_length=1, max_length=500)
     full_description: Optional[str] = None
 
     company_id: int

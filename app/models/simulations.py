@@ -9,7 +9,7 @@ from app.db.base import Base
 
 class Simulation(Base):
     """
-    Simulación principal (Hybrid: On-Demand + Live Events)
+    SimulaciÃ³n principal (Hybrid: On-Demand + Live Events)
     """
     __tablename__ = "simulations"
 
@@ -98,6 +98,10 @@ class ModuleTask(Base):
     model_answer = relationship("ModelAnswer", uselist=False, back_populates="task", cascade="all, delete-orphan")
 
 class TaskResource(Base):
+    @property
+    def title(self):
+        return self.name
+
     __tablename__ = "task_resources"
     id = Column(Integer, primary_key=True, index=True)
     task_id = Column(Integer, ForeignKey("module_tasks.id"), nullable=False, index=True)

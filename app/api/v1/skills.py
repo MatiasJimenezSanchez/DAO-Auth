@@ -1,161 +1,47 @@
-"""
-Skills API Endpoints - COMPLETE VERSION
-CRUD operations with correct HTTP methods
-"""
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
 from typing import List, Optional
-
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.models.skill import Skill
 from app.schemas.skill import SkillCreate, SkillUpdate, SkillOut
+from app.api.v1.auth import get_current_user
 
 router = APIRouter()
 
-
-@router.post("/skills", response_model=SkillOut, status_code=status.HTTP_201_CREATED)
-def create_skill(
-    skill_data: SkillCreate,
-    db: Session = Depends(get_db)
-):
-    """Create new skill"""
-    # Check duplicate
-    existing = db.query(Skill).filter(Skill.name == skill_data.name).first()
+@router.post("/", response_model=SkillOut, status_code=201)
+def create_skill(skill: SkillCreate, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    existing = db.query(Skill).filter(Skill.name == skill.name).first()
     if existing:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Skill with name '{skill_data.name}' already exists"
-        )
-    
-    db_skill = Skill(**skill_data.model_dump())
-    db.add(db_skill)
-    
-    try:
-        db.commit()
-        db.refresh(db_skill)
-    except IntegrityError:
-        db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Skill with name '{skill_data.name}' already exists"
-        )
-    
+        raise HTTPException(status_code=400, detail="Skill already exists")
+    db_obj = Skill(**skill.model_dump())
+    db.add(db_obj); db.commit(); db.refresh(db_obj)
+    return db_obj
+
+@router.get("/", response_model=List[SkillOut])
+def list_skills(category: Optional[str] = None, db: Session = Depends(get_db)):
+    q = db.query(Skill).filter(Skill.is_active == True)  # FIX: Solo activos
+    if category: q = q.filter(Skill.category == category)
+    return q.all()
+
+@router.get("/{skill_id}", response_model=SkillOut)
+def get_skill(skill_id: int, db: Session = Depends(get_db)):
+    s = db.query(Skill).filter(Skill.id == skill_id).first()
+    if not s: raise HTTPException(status_code=404, detail="Skill not found")
+    return s
+
+@router.put("/{skill_id}", response_model=SkillOut)
+def update_skill(skill_id: int, skill: SkillUpdate, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    db_skill = db.query(Skill).filter(Skill.id == skill_id).first()
+    if not db_skill: raise HTTPException(status_code=404, detail="Skill not found")
+    for k, v in skill.model_dump(exclude_unset=True).items():
+        setattr(db_skill, k, v)
+    db.commit(); db.refresh(db_skill)
     return db_skill
 
-
-@router.get("/skills", response_model=List[SkillOut])
-def list_skills(
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=100),
-    category: Optional[str] = None,
-    db: Session = Depends(get_db)
-):
-    """List all active skills"""
-    query = db.query(Skill).filter(Skill.is_active == True)
-    
-    if category:
-        query = query.filter(Skill.category == category)
-    
-    skills = query.offset(skip).limit(limit).all()
-    return skills
-
-
-@router.get("/skills/{skill_id}", response_model=SkillOut)
-def get_skill(skill_id: int, db: Session = Depends(get_db)):
-    """Get skill by ID"""
-    skill = db.query(Skill).filter(Skill.id == skill_id).first()
-    
-    if not skill:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Skill with id {skill_id} not found"
-        )
-    
-    return skill
-
-
-# CRITICAL FIX: Use PUT (not PATCH) for full update
-@router.put("/skills/{skill_id}", response_model=SkillOut)
-def update_skill(
-    skill_id: int,
-    skill_data: SkillUpdate,
-    db: Session = Depends(get_db)
-):
-    """Update skill (PUT method)"""
-    skill = db.query(Skill).filter(Skill.id == skill_id).first()
-    
-    if not skill:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Skill with id {skill_id} not found"
-        )
-    
-    update_data = skill_data.model_dump(exclude_unset=True)
-    
-    for field, value in update_data.items():
-        setattr(skill, field, value)
-    
-    try:
-        db.commit()
-        db.refresh(skill)
-    except IntegrityError:
-        db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Update failed - possibly duplicate name"
-        )
-    
-    return skill
-
-
-# ALSO keep PATCH for partial updates (best practice)
-@router.patch("/skills/{skill_id}", response_model=SkillOut)
-def partial_update_skill(
-    skill_id: int,
-    skill_data: SkillUpdate,
-    db: Session = Depends(get_db)
-):
-    """Partial update skill (PATCH method)"""
-    skill = db.query(Skill).filter(Skill.id == skill_id).first()
-    
-    if not skill:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Skill with id {skill_id} not found"
-        )
-    
-    update_data = skill_data.model_dump(exclude_unset=True)
-    
-    for field, value in update_data.items():
-        setattr(skill, field, value)
-    
-    try:
-        db.commit()
-        db.refresh(skill)
-    except IntegrityError:
-        db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Update failed - possibly duplicate name"
-        )
-    
-    return skill
-
-
-# CRITICAL FIX: Explicit DELETE route
-@router.delete("/skills/{skill_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_skill(skill_id: int, db: Session = Depends(get_db)):
-    """Soft delete skill (DELETE method)"""
-    skill = db.query(Skill).filter(Skill.id == skill_id).first()
-    
-    if not skill:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Skill with id {skill_id} not found"
-        )
-    
-    skill.is_active = False
+@router.delete("/{skill_id}", status_code=204)
+def delete_skill(skill_id: int, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    s = db.query(Skill).filter(Skill.id == skill_id).first()
+    if not s: raise HTTPException(status_code=404, detail="Skill not found")
+    s.is_active = False
     db.commit()
-    
     return None

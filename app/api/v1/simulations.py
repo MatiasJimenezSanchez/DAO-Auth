@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, status, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.db.session import get_db
+from app.schemas.simulation import SimulationCreate, SimulationOut
 from app.services.simulation_service import SimulationService
 from app.schemas.simulations import SimulationCreate, SimulationUpdate, SimulationOut
 
