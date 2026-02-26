@@ -1129,19 +1129,21 @@ docker-compose exec -T web pytest tests/ -v --tb=short -q
 
 ## 🛠️ Comandos Disponibles (PowerShell)
 
+Para usar estos comandos, recuerda cargar primero el script en tu sesión de PowerShell ejecutando: `. .\comandos-delphos.ps1`
+
 | Comando | Descripción |
 |:--------|:------------|
-| `aurum-start` | Levanta los contenedores (API + DB) |
-| `aurum-stop` | Detiene los servicios |
-| `aurum-restart` | Reinicia los servicios |
-| `aurum-status` | Muestra estado de servicios y enlaces útiles |
-| `aurum-logs [web\|db]` | Muestra logs (usa `-Follow` para tiempo real) |
-| `aurum-shell [web\|db]` | Abre shell en contenedor (bash o psql) |
-| `aurum-test [path]` | ⭐ Ejecuta tests con pytest |
-| `aurum-migrate` | Gestiona migraciones de Alembic |
-| `aurum-rebuild` | Reconstruye imágenes desde cero |
-| `aurum-db-reset` | ⚠️ Borra y recrea la base de datos (destructivo) |
-| `aurum-help` | Muestra ayuda de todos los comandos |
+| `delphos-start` | Levanta los contenedores (API + DB) |
+| `delphos-stop` | Detiene los servicios |
+| `delphos-restart` | Reinicia los servicios |
+| `delphos-status` | Muestra estado de servicios y enlaces útiles |
+| `delphos-logs [web\|db]` | Muestra logs (usa `-Follow` para tiempo real) |
+| `delphos-shell [web\|db]` | Abre shell en contenedor (bash o psql) |
+| `delphos-test [path]` | ⭐ Ejecuta tests con pytest |
+| `delphos-migrate` | Gestiona migraciones de Alembic |
+| `delphos-rebuild` | Reconstruye imágenes desde cero |
+| `delphos-db-reset` | ⚠️ Borra y recrea la base de datos (destructivo) |
+| `delphos-help` | Muestra ayuda de todos los comandos |
 
 ---
 
@@ -1149,20 +1151,19 @@ docker-compose exec -T web pytest tests/ -v --tb=short -q
 
 ```powershell
 # Aplicar todas las migraciones pendientes
-aurum-migrate -Action upgrade
+delphos-migrate -Action upgrade
 
 # Ver historial completo de migraciones
-aurum-migrate -Action history
+delphos-migrate -Action history
 
 # Crear nueva migración automática (detecta cambios en modelos)
-aurum-migrate -Action revision -Message "add_new_column_to_users"
+delphos-migrate -Action revision -Message "add_new_column_to_users"
 
 # Revertir última migración
-aurum-migrate -Action downgrade -Target "-1"
+delphos-migrate -Action downgrade -Target "-1"
 
 # Ir a versión específica
-aurum-migrate -Action downgrade -Target "b6ff38f7e173"
-```
+delphos-migrate -Action downgrade -Target "b6ff38f7e173"
 
 ---
 

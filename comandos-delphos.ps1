@@ -1,18 +1,19 @@
 # ============================================================================
-# Comandos Docker para Aurum DAO API
+# Comandos Docker para Delphos API
 # ============================================================================
-# Uso: . .\comandos-docker.ps1  (cargar en sesión actual)
+# Uso: . .\comandos-delphos.ps1  (cargar en sesión actual)
 # ============================================================================
 
-$Global:AURUM_PROJECT = "C:\Users\matji\OneDrive\Documentos\MATI\PROYECTOS\AURUM BACK END"
+# Detecta automáticamente la carpeta actual, ya no importa cómo se llame
+$Global:DELPHOS_PROJECT = $PSScriptRoot
 
-function aurum-start {
+function delphos-start {
     <#
     .SYNOPSIS
-    Inicia todos los servicios de Aurum DAO
+    Inicia todos los servicios de Delphos
     #>
-    Write-Host "🚀 Iniciando Aurum DAO API..." -ForegroundColor Cyan
-    Set-Location $Global:AURUM_PROJECT
+    Write-Host "🚀 Iniciando Delphos API..." -ForegroundColor Cyan
+    Set-Location $Global:DELPHOS_PROJECT
     docker-compose up -d
     Start-Sleep -Seconds 5
     docker-compose ps
@@ -20,29 +21,29 @@ function aurum-start {
     Write-Host "📝 API Docs: http://localhost:8000/docs" -ForegroundColor Yellow
 }
 
-function aurum-stop {
+function delphos-stop {
     <#
     .SYNOPSIS
-    Detiene todos los servicios de Aurum DAO
+    Detiene todos los servicios de Delphos
     #>
-    Write-Host "⏸️  Deteniendo Aurum DAO API..." -ForegroundColor Yellow
-    Set-Location $Global:AURUM_PROJECT
+    Write-Host "⏸️  Deteniendo Delphos API..." -ForegroundColor Yellow
+    Set-Location $Global:DELPHOS_PROJECT
     docker-compose down
     Write-Host "✓ Servicios detenidos" -ForegroundColor Green
 }
 
-function aurum-restart {
+function delphos-restart {
     <#
     .SYNOPSIS
-    Reinicia todos los servicios de Aurum DAO
+    Reinicia todos los servicios de Delphos
     #>
-    Write-Host "🔄 Reiniciando Aurum DAO API..." -ForegroundColor Cyan
-    aurum-stop
+    Write-Host "🔄 Reiniciando Delphos API..." -ForegroundColor Cyan
+    delphos-stop
     Start-Sleep -Seconds 2
-    aurum-start
+    delphos-start
 }
 
-function aurum-logs {
+function delphos-logs {
     <#
     .SYNOPSIS
     Muestra logs de los servicios
@@ -56,7 +57,7 @@ function aurum-logs {
         [switch]$Follow
     )
     
-    Set-Location $Global:AURUM_PROJECT
+    Set-Location $Global:DELPHOS_PROJECT
     
     if ($Follow) {
         if ($Service) {
@@ -73,7 +74,7 @@ function aurum-logs {
     }
 }
 
-function aurum-shell {
+function delphos-shell {
     <#
     .SYNOPSIS
     Abre un shell interactivo en el contenedor especificado
@@ -85,16 +86,17 @@ function aurum-shell {
     )
     
     Write-Host "🐚 Abriendo shell en contenedor: $Service" -ForegroundColor Cyan
-    Set-Location $Global:AURUM_PROJECT
+    Set-Location $Global:DELPHOS_PROJECT
     
     if ($Service -eq "db") {
+        # Nota: Aquí se conecta a la base de datos que está en el docker-compose.yml
         docker-compose exec db psql -U postgres -d aurum_dao
     } else {
         docker-compose exec web /bin/bash
     }
 }
 
-function aurum-migrate {
+function delphos-migrate {
     <#
     .SYNOPSIS
     Ejecuta migraciones de Alembic
@@ -111,7 +113,7 @@ function aurum-migrate {
         [string]$Message = ""
     )
     
-    Set-Location $Global:AURUM_PROJECT
+    Set-Location $Global:DELPHOS_PROJECT
     
     switch ($Action) {
         "upgrade" {
@@ -139,7 +141,7 @@ function aurum-migrate {
     }
 }
 
-function aurum-test {
+function delphos-test {
     <#
     .SYNOPSIS
     Ejecuta tests con pytest
@@ -151,38 +153,38 @@ function aurum-test {
     )
     
     Write-Host "🧪 Ejecutando tests..." -ForegroundColor Cyan
-    Set-Location $Global:AURUM_PROJECT
+    Set-Location $Global:DELPHOS_PROJECT
     docker-compose exec web pytest $Path -v
 }
 
-function aurum-rebuild {
+function delphos-rebuild {
     <#
     .SYNOPSIS
     Reconstruye las imágenes de Docker desde cero
     #>
     Write-Host "🔨 Reconstruyendo imágenes..." -ForegroundColor Cyan
-    Set-Location $Global:AURUM_PROJECT
+    Set-Location $Global:DELPHOS_PROJECT
     docker-compose down
     docker-compose build --no-cache
     docker-compose up -d
     Write-Host "✓ Reconstrucción completada" -ForegroundColor Green
 }
 
-function aurum-status {
+function delphos-status {
     <#
     .SYNOPSIS
     Muestra el estado de todos los servicios
     #>
-    Write-Host "`n📊 Estado de Aurum DAO API" -ForegroundColor Cyan
+    Write-Host "`n📊 Estado de Delphos API" -ForegroundColor Cyan
     Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Gray
-    Set-Location $Global:AURUM_PROJECT
+    Set-Location $Global:DELPHOS_PROJECT
     docker-compose ps
     Write-Host "`n📝 API Docs: http://localhost:8000/docs" -ForegroundColor Yellow
     Write-Host "🗄️  PostgreSQL: localhost:5432" -ForegroundColor Yellow
     Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━`n" -ForegroundColor Gray
 }
 
-function aurum-db-reset {
+function delphos-db-reset {
     <#
     .SYNOPSIS
     Reinicia completamente la base de datos (¡PELIGRO!)
@@ -192,7 +194,7 @@ function aurum-db-reset {
     
     if ($confirm -eq "SI") {
         Write-Host "🗑️  Eliminando base de datos..." -ForegroundColor Yellow
-        Set-Location $Global:AURUM_PROJECT
+        Set-Location $Global:DELPHOS_PROJECT
         docker-compose down -v
         docker-compose up -d db
         Start-Sleep -Seconds 5
@@ -206,27 +208,27 @@ function aurum-db-reset {
     }
 }
 
-function aurum-help {
+function delphos-help {
     <#
     .SYNOPSIS
     Muestra ayuda de comandos disponibles
     #>
-    Write-Host "`n🎯 Comandos disponibles para Aurum DAO API" -ForegroundColor Cyan
+    Write-Host "`n🎯 Comandos disponibles para Delphos API" -ForegroundColor Cyan
     Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Gray
-    Write-Host "  aurum-start         " -NoNewline; Write-Host "Inicia todos los servicios" -ForegroundColor Gray
-    Write-Host "  aurum-stop          " -NoNewline; Write-Host "Detiene todos los servicios" -ForegroundColor Gray
-    Write-Host "  aurum-restart       " -NoNewline; Write-Host "Reinicia todos los servicios" -ForegroundColor Gray
-    Write-Host "  aurum-logs [srv]    " -NoNewline; Write-Host "Muestra logs (usa -Follow para seguir)" -ForegroundColor Gray
-    Write-Host "  aurum-shell [srv]   " -NoNewline; Write-Host "Abre shell en contenedor (web o db)" -ForegroundColor Gray
-    Write-Host "  aurum-migrate       " -NoNewline; Write-Host "Ejecuta migraciones de Alembic" -ForegroundColor Gray
-    Write-Host "  aurum-test [path]   " -NoNewline; Write-Host "Ejecuta tests con pytest" -ForegroundColor Gray
-    Write-Host "  aurum-rebuild       " -NoNewline; Write-Host "Reconstruye imágenes desde cero" -ForegroundColor Gray
-    Write-Host "  aurum-status        " -NoNewline; Write-Host "Muestra estado de servicios" -ForegroundColor Gray
-    Write-Host "  aurum-db-reset      " -NoNewline; Write-Host "Reinicia la base de datos (¡PELIGRO!)" -ForegroundColor Gray
-    Write-Host "  aurum-help          " -NoNewline; Write-Host "Muestra esta ayuda" -ForegroundColor Gray
+    Write-Host "  delphos-start         " -NoNewline; Write-Host "Inicia todos los servicios" -ForegroundColor Gray
+    Write-Host "  delphos-stop          " -NoNewline; Write-Host "Detiene todos los servicios" -ForegroundColor Gray
+    Write-Host "  delphos-restart       " -NoNewline; Write-Host "Reinicia todos los servicios" -ForegroundColor Gray
+    Write-Host "  delphos-logs [srv]    " -NoNewline; Write-Host "Muestra logs (usa -Follow para seguir)" -ForegroundColor Gray
+    Write-Host "  delphos-shell [srv]   " -NoNewline; Write-Host "Abre shell en contenedor (web o db)" -ForegroundColor Gray
+    Write-Host "  delphos-migrate       " -NoNewline; Write-Host "Ejecuta migraciones de Alembic" -ForegroundColor Gray
+    Write-Host "  delphos-test [path]   " -NoNewline; Write-Host "Ejecuta tests con pytest" -ForegroundColor Gray
+    Write-Host "  delphos-rebuild       " -NoNewline; Write-Host "Reconstruye imágenes desde cero" -ForegroundColor Gray
+    Write-Host "  delphos-status        " -NoNewline; Write-Host "Muestra estado de servicios" -ForegroundColor Gray
+    Write-Host "  delphos-db-reset      " -NoNewline; Write-Host "Reinicia la base de datos (¡PELIGRO!)" -ForegroundColor Gray
+    Write-Host "  delphos-help          " -NoNewline; Write-Host "Muestra esta ayuda" -ForegroundColor Gray
     Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`n" -ForegroundColor Gray
 }
 
 # Mensaje de bienvenida
-Write-Host "✓ Comandos Aurum DAO cargados" -ForegroundColor Green
-Write-Host "  Usa 'aurum-help' para ver todos los comandos disponibles" -ForegroundColor Gray
+Write-Host "✓ Comandos Delphos cargados exitosamente" -ForegroundColor Green
+Write-Host "  Usa 'delphos-help' para ver todos los comandos disponibles" -ForegroundColor Gray
