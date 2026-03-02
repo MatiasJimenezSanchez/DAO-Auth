@@ -12,6 +12,9 @@ class Simulation(Base):
     SimulaciÃ³n principal (Hybrid: On-Demand + Live Events)
     """
     __tablename__ = "simulations"
+    # --- CAMPO IA ---
+    industria_principal_id = Column(Integer, nullable=True, index=True, comment='Desnormalizado para IA')
+
 
     id = Column(Integer, primary_key=True, index=True)
 

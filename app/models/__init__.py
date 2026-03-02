@@ -43,3 +43,5 @@ __all__ = [
     "Skill",
     "UserSimulationProgress"
 ]
+
+from .ai import RecomendacionIA

@@ -11,6 +11,18 @@ from app.db.base import Base
 class User(Base):
     __tablename__ = "users"
 
+    # --- CAMPOS IA ---
+    nivel_educativo = Column(String(100), nullable=True)
+    campo_estudio = Column(String(150), nullable=True)
+    nombre_institucion = Column(String(200), nullable=True)
+    analytical_score = Column(Integer, default=0)
+    creative_score = Column(Integer, default=0)
+    social_score = Column(Integer, default=0)
+    linguistic_score = Column(Integer, default=0)
+    hands_on_score = Column(Integer, default=0)
+    origen_datos = Column(String(50), default='organic')
+
+
     id = Column(Integer, primary_key=True, index=True)
     
     # Auth Basic
