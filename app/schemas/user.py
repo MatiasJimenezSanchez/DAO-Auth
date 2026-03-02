@@ -29,6 +29,14 @@ class UserUpdate(BaseModel):
     avatar_url: Optional[str] = None
     is_active: Optional[bool] = None
 
+
+    # --- Validaciones Estrictas IA (0-100) ---
+    analytical_score: int = Field(default=0, ge=0, le=100, description="Score analítico")
+    creative_score: int = Field(default=0, ge=0, le=100, description="Score creativo")
+    social_score: int = Field(default=0, ge=0, le=100, description="Score social")
+    linguistic_score: int = Field(default=0, ge=0, le=100, description="Score lingüístico")
+    hands_on_score: int = Field(default=0, ge=0, le=100, description="Score práctico")
+
 class UserOut(UserBase):
     id: int
     is_active: bool
