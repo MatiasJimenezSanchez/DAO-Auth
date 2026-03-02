@@ -14,9 +14,9 @@ function delphos-start {
     #>
     Write-Host "🚀 Iniciando Delphos API..." -ForegroundColor Cyan
     Set-Location $Global:DELPHOS_PROJECT
-    docker-compose up -d
+    docker compose up -d
     Start-Sleep -Seconds 5
-    docker-compose ps
+    docker compose ps
     Write-Host "`n✓ Servicios iniciados" -ForegroundColor Green
     Write-Host "📝 API Docs: http://localhost:8000/docs" -ForegroundColor Yellow
 }
@@ -28,7 +28,7 @@ function delphos-stop {
     #>
     Write-Host "⏸️  Deteniendo Delphos API..." -ForegroundColor Yellow
     Set-Location $Global:DELPHOS_PROJECT
-    docker-compose down
+    docker compose down
     Write-Host "✓ Servicios detenidos" -ForegroundColor Green
 }
 
@@ -61,15 +61,15 @@ function delphos-logs {
     
     if ($Follow) {
         if ($Service) {
-            docker-compose logs -f $Service
+            docker compose logs -f $Service
         } else {
-            docker-compose logs -f
+            docker compose logs -f
         }
     } else {
         if ($Service) {
-            docker-compose logs --tail=100 $Service
+            docker compose logs --tail=100 $Service
         } else {
-            docker-compose logs --tail=100
+            docker compose logs --tail=100
         }
     }
 }
@@ -89,10 +89,10 @@ function delphos-shell {
     Set-Location $Global:DELPHOS_PROJECT
     
     if ($Service -eq "db") {
-        # Nota: Aquí se conecta a la base de datos que está en el docker-compose.yml
-        docker-compose exec db psql -U postgres -d aurum_dao
+        # Nota: Aquí se conecta a la base de datos que está en el docker compose.yml
+        docker compose exec db psql -U postgres -d aurum_dao
     } else {
-        docker-compose exec web /bin/bash
+        docker compose exec web /bin/bash
     }
 }
 
@@ -118,11 +118,11 @@ function delphos-migrate {
     switch ($Action) {
         "upgrade" {
             Write-Host "⬆️  Aplicando migraciones..." -ForegroundColor Cyan
-            docker-compose exec web alembic upgrade $Target
+            docker compose exec web alembic upgrade $Target
         }
         "downgrade" {
             Write-Host "⬇️  Revirtiendo migraciones..." -ForegroundColor Yellow
-            docker-compose exec web alembic downgrade $Target
+            docker compose exec web alembic downgrade $Target
         }
         "revision" {
             if (-not $Message) {
@@ -130,13 +130,13 @@ function delphos-migrate {
                 return
             }
             Write-Host "📝 Creando nueva revisión..." -ForegroundColor Cyan
-            docker-compose exec web alembic revision --autogenerate -m "$Message"
+            docker compose exec web alembic revision --autogenerate -m "$Message"
         }
         "history" {
-            docker-compose exec web alembic history
+            docker compose exec web alembic history
         }
         "current" {
-            docker-compose exec web alembic current
+            docker compose exec web alembic current
         }
     }
 }
@@ -154,7 +154,7 @@ function delphos-test {
     
     Write-Host "🧪 Ejecutando tests..." -ForegroundColor Cyan
     Set-Location $Global:DELPHOS_PROJECT
-    docker-compose exec web pytest $Path -v
+    docker compose exec web pytest $Path -v
 }
 
 function delphos-rebuild {
@@ -164,9 +164,9 @@ function delphos-rebuild {
     #>
     Write-Host "🔨 Reconstruyendo imágenes..." -ForegroundColor Cyan
     Set-Location $Global:DELPHOS_PROJECT
-    docker-compose down
-    docker-compose build --no-cache
-    docker-compose up -d
+    docker compose down
+    docker compose build --no-cache
+    docker compose up -d
     Write-Host "✓ Reconstrucción completada" -ForegroundColor Green
 }
 
@@ -178,7 +178,7 @@ function delphos-status {
     Write-Host "`n📊 Estado de Delphos API" -ForegroundColor Cyan
     Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Gray
     Set-Location $Global:DELPHOS_PROJECT
-    docker-compose ps
+    docker compose ps
     Write-Host "`n📝 API Docs: http://localhost:8000/docs" -ForegroundColor Yellow
     Write-Host "🗄️  PostgreSQL: localhost:5432" -ForegroundColor Yellow
     Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━`n" -ForegroundColor Gray
@@ -195,13 +195,13 @@ function delphos-db-reset {
     if ($confirm -eq "SI") {
         Write-Host "🗑️  Eliminando base de datos..." -ForegroundColor Yellow
         Set-Location $Global:DELPHOS_PROJECT
-        docker-compose down -v
-        docker-compose up -d db
+        docker compose down -v
+        docker compose up -d db
         Start-Sleep -Seconds 5
-        docker-compose up -d web
+        docker compose up -d web
         Start-Sleep -Seconds 3
         Write-Host "🔄 Aplicando migraciones..." -ForegroundColor Cyan
-        docker-compose exec web alembic upgrade head
+        docker compose exec web alembic upgrade head
         Write-Host "✓ Base de datos reiniciada" -ForegroundColor Green
     } else {
         Write-Host "❌ Operación cancelada" -ForegroundColor Yellow
