@@ -11,15 +11,15 @@ from app.db.session import get_db
 from app.models.user_progress import UserSimulationProgress, ProgressStatus
 from app.models.user import User
 from app.models.simulations import Simulation
-from app.schemas.progress import ProgressCreate, ProgressUpdate, ProgressOut
+from app.schemas.progress import EnrollmentCreate, TaskSubmission, UserProgressOut
 from app.api.v1.auth import get_current_user
 
 router = APIRouter()
 
 
-@router.post("/progress/start", response_model=ProgressOut, status_code=status.HTTP_201_CREATED)
+@router.post("/progress/start", response_model=UserProgressOut, status_code=status.HTTP_201_CREATED)
 def start_simulation(
-    progress_data: ProgressCreate,
+    progress_data: EnrollmentCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -73,7 +73,7 @@ def start_simulation(
     return db_progress
 
 
-@router.get("/progress/user/{user_id}", response_model=List[ProgressOut])
+@router.get("/progress/user/{user_id}", response_model=List[UserProgressOut])
 def get_user_progress(
     user_id: int,
     db: Session = Depends(get_db),
@@ -96,10 +96,10 @@ def get_user_progress(
     return progress_records
 
 
-@router.patch("/progress/{progress_id}", response_model=ProgressOut)
+@router.patch("/progress/{progress_id}", response_model=UserProgressOut)
 def update_progress(
     progress_id: int,
-    progress_data: ProgressUpdate,
+    progress_data: TaskSubmission,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -142,7 +142,7 @@ def update_progress(
     return progress
 
 
-@router.get("/progress/{progress_id}", response_model=ProgressOut)
+@router.get("/progress/{progress_id}", response_model=UserProgressOut)
 def get_progress(
     progress_id: int,
     db: Session = Depends(get_db),
