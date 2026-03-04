@@ -919,14 +919,14 @@ class CompanyService:
 ## Quick Start
 
 ### Prerequisites
-- **Docker Desktop** installed and running
-- **PowerShell** (Windows) or Bash (Linux/Mac)
-- **Git** to clone repository
+- Docker Desktop installed and running
+- PowerShell (Windows) or Bash (Linux/Mac)
+- Git to clone repository
 
 ### 1. Clone and Configure
-```powershell
+```bash
 git clone https://github.com/MatiasJimenezSanchez/DAO-Auth.git
-cd "AURUM BACK END"
+cd DAO-Auth
 
 # Copy example configuration
 cp .env.example .env
@@ -941,27 +941,27 @@ python -c "import secrets; print(secrets.token_urlsafe(32))"
 
 ### 2. Load Development Tools
 ```powershell
-. .\comandos-docker.ps1
+. .\comandos-delphos.ps1
 ```
 
 ### 3. Start Services
-```powershell
+```bash
 aurum-start
 ```
 
 This will start:
-- **REST API:** http://localhost:8000
-- **Swagger UI:** http://localhost:8000/docs
-- **ReDoc:** http://localhost:8000/redoc
-- **PostgreSQL:** localhost:5432
+- **REST API**: http://localhost:8000
+- **Swagger UI**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc
+- **PostgreSQL**: localhost:5432
 
 ### 4. Verify Status
-```powershell
+```bash
 aurum-status
 ```
 
 ### 5. Run Migrations and Seeds
-```powershell
+```bash
 aurum-migrate -Action upgrade
 
 aurum-shell web
@@ -979,7 +979,7 @@ curl http://localhost:8000/docs
 ```
 
 ### 7. Run Shield Tests
-```powershell
+```bash
 docker-compose exec -T web pytest tests/ -v --tb=short -q
 # Expected: 182 passed, 19 skipped (~21s)
 ```
@@ -992,10 +992,10 @@ docker-compose exec -T web pytest tests/ -v --tb=short -q
 
 Before using CLI commands, load the PowerShell script in your session:
 ```powershell
-. .\comandos-docker.ps1
+. .\comandos-delphos.ps1
 ```
 
-This imports all `aurum-*` commands into your current PowerShell environment.
+This imports all `aurum-*` commands into your current PowerShell environment.nt.
 
 ### Available Commands
 
