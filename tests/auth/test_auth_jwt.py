@@ -28,7 +28,7 @@ class TestJWTTampering:
         token = login_res.json()["access_token"]
 
         # 2. Tamper with token (modify last character)
-        tampered_token = token[:-1] + ("A" if token[-1] != "A" else "B")
+        tampered_token = token[:-10] + "HACKED" + token[-4:]
         headers = {"Authorization": f"Bearer {tampered_token}"}
 
         # 3. Should be rejected
