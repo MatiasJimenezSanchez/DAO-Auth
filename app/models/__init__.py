@@ -47,3 +47,5 @@ __all__ = [
 from .ai import RecomendacionIA
 
 from .oracle import Archetype, OracleQuestion, QuestionOption, OracleSession, UserOracleAnswer
+
+from .analytics import Candidate, UserEvent
