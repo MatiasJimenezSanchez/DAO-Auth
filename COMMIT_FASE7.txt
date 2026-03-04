@@ -1,0 +1,17 @@
+feat(oracle): implementación del motor psicométrico y test vocacional
+
+RESUMEN DE CAMBIOS:
+Se completó la Fase 7 del proyecto, estableciendo el "Oráculo", el sistema de evaluación que alimenta el Feature Store de la IA con el perfil cognitivo de los usuarios.
+
+DETALLES TÉCNICOS:
+1. Modelos (app/models/oracle.py):
+   - `Archetype`: Perfiles psicológicos resultantes y pesos mínimos.
+   - `OracleQuestion` & `QuestionOption`: Estructura del test con pesos dimensionales (analytical, creative, social, linguistic, hands_on).
+   - `OracleSession`: Tracking de estado y acumuladores de score en tiempo real.
+   - `UserOracleAnswer`: Registro histórico de respuestas y tiempos de reacción.
+2. Schemas (app/schemas/oracle.py):
+   - Implementados esquemas de lectura anidados (`QuestionOut` con opciones) y escritura (`AnswerCreate`).
+3. Base de Datos:
+   - Migración autogenerada aplicada exitosamente (d84a40a32a43).
+4. QA y Testing:
+   - Creada suite `test_oracle_engine.py` validando la lógica de suma de pesos dimensionales en memoria.
