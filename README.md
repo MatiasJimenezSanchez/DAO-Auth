@@ -749,8 +749,8 @@ class AuditLog(Base):
 
 ### 1. Clone & Configure
 ```bash
-git clone https://github.com/MatiasJimenezSanchez/delphos-backend.git
-cd delphos-backend
+git clone https://github.com/MatiasJimenezSanchez/DAO-Auth.git
+cd DAO-Auth
 
 cp .env.example .env
 
@@ -883,34 +883,6 @@ REDIS_URL=redis://redis:6379/0
 SENTRY_DSN=https://...
 LOG_LEVEL=WARNING
 ```
-
----
-
-## 🗺️ Roadmap
-
-### Phase 12: AI Recommendation Engine (Q2 2026)
-- [ ] Vector similarity search (pgvector extension)
-- [ ] Collaborative filtering (user-user, item-item)
-- [ ] A/B testing framework for recommendation algorithms
-
-### Phase 13: Real-Time Features (Q3 2026)
-- [ ] WebSocket support for live simulations
-- [ ] Redis pub/sub for notifications
-- [ ] Live cohort chat (Socket.IO)
-
-### Phase 14: Advanced Analytics (Q4 2026)
-- [ ] Data warehouse (Snowflake/BigQuery integration)
-- [ ] BI dashboards (Metabase/Looker)
-- [ ] Predictive churn modeling
-
-### v3.0.0 (2027)
-- [ ] Multi-tenancy architecture
-- [ ] White-label university portals
-- [ ] Mobile SDK (Flutter/React Native)
-- [ ] Blockchain credentials (NFT certificates)
-
----
-
 ## 📄 License & Author
 
 **MIT License** - Copyright (c) 2026 Matías Jiménez Sánchez
