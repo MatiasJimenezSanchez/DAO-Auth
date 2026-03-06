@@ -1,0 +1,15 @@
+feat(b2b): implementación de Fase 10 (Ecosistema Universitario y Analítica B2B)
+
+RESUMEN DE CAMBIOS:
+Se expandió el esquema relacional para soportar clientes institucionales (B2B SaaS).
+
+DETALLES TÉCNICOS:
+1. Modelos (app/models/b2b_university.py):
+   - Universidades: AcademicProgram, UniversityStudent, ProgramSimulation, UniversityReport.
+2. Modelos (app/models/analytics.py):
+   - Expansión B2B: CandidateEvent, SimulationAnalytics, SimulationCohort, ConversionFunnel.
+3. Schemas:
+   - Añadidas validaciones Pydantic para los 8 nuevos modelos.
+4. Base de Datos & QA:
+   - Migración autogenerada (82d6f87832a0) aplicada con éxito.
+   - Suite de pruebas 'test_b2b_safe.py' creada y pasando al 100%.
