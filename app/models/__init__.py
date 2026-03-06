@@ -21,14 +21,19 @@ from app.models.gamification import (UserModule, TaskSkill, XPTransaction, Achie
 from app.models.b2b_university import AcademicProgram, UniversityStudent, ProgramSimulation, UniversityReport
 from app.models.analytics import CandidateEvent, SimulationAnalytics, SimulationCohort, ConversionFunnel
 
+# FASE 11
+from app.models.enterprise import (FeedPost, PostLike, PostComment, SavedPost, Notification, NotificationPreference, SupportTicket, TicketMessage, GeneralFeedback, SubscriptionPlan, UserSubscription, PaymentTransaction, AdminDao, FraudAttempt)
+
 __all__ = [
     "User", "Region", "Province", "City", "Industry", "ContentCategory", "SkillCatalog",
     "University", "Career", "Empresa", "CompanyUser", "Simulation", "SimulationModule", 
     "ModuleTask", "TaskResource", "ModelAnswer", "Skill", "UserSimulationProgress",
-    "RecomendacionIA", "Archetype", "OracleQuestion", "QuestionOption", "OracleSession", 
-    "UserOracleAnswer", "Candidate", "UserEvent", "UserModule", "TaskSkill", "XPTransaction", 
-    "Achievement", "UserAchievement", "Mission", "UserMission", "VirtualMentor", 
-    "MentorConversation", "MentorMessage", "OracleMessage",
+    "RecomendacionIA", "Archetype", "OracleQuestion", "QuestionOption", "OracleSession", "UserOracleAnswer",
+    "Candidate", "UserEvent", "UserModule", "TaskSkill", "XPTransaction", "Achievement", "UserAchievement",
+    "Mission", "UserMission", "VirtualMentor", "MentorConversation", "MentorMessage", "OracleMessage",
     "AcademicProgram", "UniversityStudent", "ProgramSimulation", "UniversityReport",
-    "CandidateEvent", "SimulationAnalytics", "SimulationCohort", "ConversionFunnel"
+    "CandidateEvent", "SimulationAnalytics", "SimulationCohort", "ConversionFunnel",
+    "FeedPost", "PostLike", "PostComment", "SavedPost", "Notification", "NotificationPreference",
+    "SupportTicket", "TicketMessage", "GeneralFeedback", "SubscriptionPlan", "UserSubscription",
+    "PaymentTransaction", "AdminDao", "FraudAttempt",
 ]
