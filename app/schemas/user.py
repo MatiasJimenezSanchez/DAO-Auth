@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, Field, ConfigDict
-from typing import Optional
+from typing import Optional, Dict, Any
 from datetime import datetime, date
 
 class Token(BaseModel):
@@ -29,13 +29,12 @@ class UserUpdate(BaseModel):
     avatar_url: Optional[str] = None
     is_active: Optional[bool] = None
 
-
-    # --- Validaciones Estrictas IA (0-100) ---
-    analytical_score: int = Field(default=0, ge=0, le=100, description="Score analítico")
-    creative_score: int = Field(default=0, ge=0, le=100, description="Score creativo")
-    social_score: int = Field(default=0, ge=0, le=100, description="Score social")
-    linguistic_score: int = Field(default=0, ge=0, le=100, description="Score lingüístico")
-    hands_on_score: int = Field(default=0, ge=0, le=100, description="Score práctico")
+    # Skills dinámicos inferidos por el motor IA
+    # Ejemplo: {"pensamiento_analitico": 72.5, "creatividad": 65.0}
+    inferred_skills: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Diccionario de micro-habilidades inferidas por el algoritmo vocacional"
+    )
 
 class UserOut(UserBase):
     id: int

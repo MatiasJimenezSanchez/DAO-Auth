@@ -3,27 +3,43 @@ from pydantic import ValidationError
 from app.schemas.user import UserUpdate
 
 class TestAIFeaturesValidation:
-    def test_ai_scores_within_limits_accepted(self):
-        # 1. Rango válido (0 a 100) debe pasar
+    def test_inferred_skills_valid_dict_accepted(self):
+        # Un diccionario de skills válido debe ser aceptado sin errores
         update_data = UserUpdate(
-            analytical_score=85, 
-            creative_score=100, 
-            social_score=0
+            inferred_skills={
+                "pensamiento_analitico": 72.5,
+                "creatividad": 65.0,
+                "liderazgo": 88.0
+            }
         )
-        assert update_data.analytical_score == 85
-        assert update_data.creative_score == 100
-        assert update_data.social_score == 0
+        assert update_data.inferred_skills["pensamiento_analitico"] == 72.5
+        assert update_data.inferred_skills["creatividad"] == 65.0
+        assert update_data.inferred_skills["liderazgo"] == 88.0
 
-    def test_ai_score_above_100_rejected(self):
-        # 2. Score mayor a 100 debe crashear Pydantic
-        with pytest.raises(ValidationError) as exc_info:
-            UserUpdate(analytical_score=101)
-        assert "analytical_score" in str(exc_info.value)
-        assert "less than or equal to 100" in str(exc_info.value) or "le" in str(exc_info.value)
+    def test_inferred_skills_none_by_default(self):
+        # Sin pasar inferred_skills, debe quedar en None (campo opcional)
+        update_data = UserUpdate(full_name="Test User")
+        assert update_data.inferred_skills is None
 
-    def test_ai_score_negative_rejected(self):
-        # 3. Score negativo debe crashear Pydantic
-        with pytest.raises(ValidationError) as exc_info:
-            UserUpdate(creative_score=-5)
-        assert "creative_score" in str(exc_info.value)
-        assert "greater than or equal to 0" in str(exc_info.value) or "ge" in str(exc_info.value)
+    def test_inferred_skills_empty_dict_accepted(self):
+        # Un dict vacío es un estado válido (usuario no ha hecho el test aún)
+        update_data = UserUpdate(inferred_skills={})
+        assert update_data.inferred_skills == {}
+
+    def test_inferred_skills_mixed_numeric_values(self):
+        # El dict acepta tanto int como float como valores de skill
+        update_data = UserUpdate(
+            inferred_skills={
+                "planificacion_proyectos": 25,
+                "storytelling": 33.3,
+                "resolucion_problemas": 90
+            }
+        )
+        assert update_data.inferred_skills["planificacion_proyectos"] == 25
+        assert update_data.inferred_skills["storytelling"] == 33.3
+
+    def test_user_update_without_skills_still_valid(self):
+        # Los demás campos de UserUpdate siguen funcionando independientemente
+        update_data = UserUpdate(full_name="María García", phone="+593999000111")
+        assert update_data.full_name == "María García"
+        assert update_data.inferred_skills is None
