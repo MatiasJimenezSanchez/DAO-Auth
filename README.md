@@ -1,4 +1,3 @@
-```markdown
 # Delphos API - Vocational Orientation & Talent Intelligence Platform
 
 ![Python](https://img.shields.io/badge/Python-3.11+-blue?logo=python&logoColor=white)
@@ -16,19 +15,19 @@ Enterprise-grade B2B/B2C SaaS backend for vocational orientation, career simulat
 
 ## 📑 Table of Contents
 
-- [Version History](#version-history)
-- [Technical Overview](#technical-overview)
-- [Data Architecture (11 Phases - 70+ Tables)](#data-architecture-11-phases---70-tables)
-- [System Architecture](#system-architecture)
-- [Technology Stack](#technology-stack)
-- [Test Coverage](#test-coverage)
-- [API Reference](#api-reference)
-- [Security Specifications](#security-specifications)
-- [Quick Start](#quick-start)
-- [Command-Line Interface](#command-line-interface)
-- [Production Deployment](#production-deployment)
-- [Roadmap](#roadmap)
-- [License & Author](#license--author)
+- [Version History](#-version-history)
+- [Technical Overview](#-technical-overview)
+- [Data Architecture (11 Phases - 70+ Tables)](#%EF%B8%8F-data-architecture-11-phases---70-tables)
+- [System Architecture](#%EF%B8%8F-system-architecture)
+- [Technology Stack](#%EF%B8%8F-technology-stack)
+- [Test Coverage](#-test-coverage)
+- [API Reference](#-api-reference)
+- [Security Specifications](#-security-specifications)
+- [Quick Start](#-quick-start)
+- [Command-Line Interface](#%EF%B8%8F-command-line-interface)
+- [Production Deployment](#-production-deployment)
+- [Roadmap](#%EF%B8%8F-roadmap)
+- [License & Author](#-license--author)
 
 ---
 
@@ -175,7 +174,6 @@ task_resources (Attachments)
 ### Phase 6: 🧠 The Oracle (AI Vocational Engine)
 
 **Revolutionary Feature Store Architecture:**
-
 ```sql
 -- OLD APPROACH (Rigid, 5 dimensions)
 CREATE TABLE user_profiles (
@@ -417,7 +415,6 @@ Admin Governance:
 | **OWASP 2024 Status** | Acceptable | **Preferred** |
 | **Max Password Length** | 72 bytes | **Unlimited** |
 | **Side-Channel Resistance** | Moderate | **Strong (constant-time)** |
-
 ```python
 # app/core/security.py
 from argon2 import PasswordHasher
@@ -473,7 +470,6 @@ Coverage: 95%+ across all modules
 | **Monetization** | 15 | 100% | Subscriptions, payments, fraud detection |
 
 ### Running Tests
-
 ```bash
 # Complete suite (325+ tests)
 docker compose exec web pytest tests/ -v --tb=short
@@ -494,7 +490,6 @@ docker compose exec web pytest tests/ --lf
 ```
 
 ### Example: Oracle AI Tests
-
 ```python
 # tests/vocational/test_oracle_engine.py
 
@@ -933,4 +928,3 @@ LOG_LEVEL=WARNING
 **Built with ❤️ using FastAPI, PostgreSQL, SQLAlchemy, and Argon2**
 
 *Last updated: March 6, 2026 | Data Layer Complete (11 Phases, 70+ Tables, 325+ Tests)*
-```
