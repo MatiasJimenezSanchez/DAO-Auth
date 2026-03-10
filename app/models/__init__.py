@@ -15,18 +15,46 @@ from app.models.oracle import Archetype, OracleQuestion, QuestionOption, OracleS
 from app.models.analytics import Candidate, UserEvent
 
 # FASE 9
-from app.models.gamification import (UserModule, TaskSkill, XPTransaction, Achievement, UserAchievement, Mission, UserMission, VirtualMentor, MentorConversation, MentorMessage, OracleMessage)
+from app.models.gamification import (
+    UserModule, TaskSkill, XPTransaction,
+    Achievement, UserAchievement,
+    Mission, UserMission,
+    VirtualMentor, MentorConversation, MentorMessage,
+    OracleMessage,
+)
 
 # FASE 10
-from app.models.b2b_university import AcademicProgram, UniversityStudent, ProgramSimulation, UniversityReport
-from app.models.analytics import CandidateEvent, SimulationAnalytics, SimulationCohort, ConversionFunnel
+from app.models.b2b_university import (
+    AcademicProgram, UniversityStudent, ProgramSimulation, UniversityReport,
+)
+from app.models.analytics import (
+    CandidateEvent, SimulationAnalytics, SimulationCohort, ConversionFunnel,
+)
 
 # FASE 11
-from app.models.enterprise import (FeedPost, PostLike, PostComment, SavedPost, Notification, NotificationPreference, SupportTicket, TicketMessage, GeneralFeedback, SubscriptionPlan, UserSubscription, PaymentTransaction, AdminDao, FraudAttempt)
+from app.models.enterprise import (
+    FeedPost, PostLike, PostComment, SavedPost,
+    Notification, NotificationPreference,
+    SupportTicket, TicketMessage, GeneralFeedback,
+    SubscriptionPlan, UserSubscription, PaymentTransaction,
+    AdminDao, FraudAttempt,
+)
+
+# Modelos Originales Recuperados
+from app.models.progress import UserSimulation, UserTask, UserSkill, SimulationSkill
+
+# FASE 12
+from app.models.infrastructure import (
+    SocialAuth, UserSession, AuthLog,
+    RateLimit, SystemConfig,
+    Level, Referral,
+    MentorSimulation,
+    AuditSimulation, AuditCompany, AuditUser,
+)
 
 __all__ = [
     "User", "Region", "Province", "City", "Industry", "ContentCategory", "SkillCatalog",
-    "University", "Career", "Empresa", "CompanyUser", "Simulation", "SimulationModule", 
+    "University", "Career", "Empresa", "CompanyUser", "Simulation", "SimulationModule",
     "ModuleTask", "TaskResource", "ModelAnswer", "Skill", "UserSimulationProgress",
     "RecomendacionIA", "Archetype", "OracleQuestion", "QuestionOption", "OracleSession", "UserOracleAnswer",
     "Candidate", "UserEvent", "UserModule", "TaskSkill", "XPTransaction", "Achievement", "UserAchievement",
@@ -36,4 +64,7 @@ __all__ = [
     "FeedPost", "PostLike", "PostComment", "SavedPost", "Notification", "NotificationPreference",
     "SupportTicket", "TicketMessage", "GeneralFeedback", "SubscriptionPlan", "UserSubscription",
     "PaymentTransaction", "AdminDao", "FraudAttempt",
+    "SocialAuth", "UserSession", "AuthLog", "RateLimit", "SystemConfig", "Level", "Referral",
+    "MentorSimulation", "AuditSimulation", "AuditCompany", "AuditUser",
+    "UserSimulation", "UserTask", "UserSkill", "SimulationSkill"
 ]
