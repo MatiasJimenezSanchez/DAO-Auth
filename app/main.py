@@ -1,13 +1,12 @@
 """
-Delphos API - main.py v2.0
-Fase 14: Catálogos + Oráculo + Infrastructure
+Delphos API - main.py
+Fase 16: Gamificación
 """
 from fastapi import FastAPI
 from pydantic import BaseModel
 
 # =============================================================================
 # IMPORTAR TODOS LOS MODELOS (registro en Base.metadata)
-# Orden: base → catálogos → entidades → features
 # =============================================================================
 import app.models.user
 import app.models.catalog
@@ -35,6 +34,7 @@ from app.api.v1 import (
     company_users,
     content,
     empresas,
+    gamification,
     oracle,
     progress,
     simulations,
@@ -51,13 +51,10 @@ class Token(BaseModel):
     token_type: str
 
 
-# =============================================================================
-# APP
-# =============================================================================
 app = FastAPI(
     title="Delphos API",
-    version="1.4.0",
-    description="Backend para simulaciones educativas empresariales - Fase 14"
+    version="1.6.0",
+    description="Backend para simulaciones educativas empresariales - Fase 16: Gamificación",
 )
 
 
@@ -65,19 +62,24 @@ app = FastAPI(
 def root():
     return {
         "status": "online",
-        "message": "Delphos API v1.4.0",
-        "phase": "14 - Catálogos + Oráculo + Infrastructure"
+        "message": "Delphos API v1.6.0",
+        "phase": "16 - Motor de Gamificación",
     }
 
 
 # =============================================================================
-# REGISTRO DE ROUTERS
+# REGISTRO DE ROUTERS (orden alfabético)
 # =============================================================================
 app.include_router(auth.router,          prefix="/api/v1",              tags=["auth"])
 app.include_router(catalogs.router,      prefix="/api/v1",              tags=["catalogs"])
 app.include_router(company_users.router, prefix="/api/v1",              tags=["company-users"])
 app.include_router(content.router,       prefix="/api/v1",              tags=["content"])
 app.include_router(empresas.router,      prefix="/api/v1/empresas",     tags=["empresas"])
+# Gamification — dos prefijos:
+#   /api/v1/gamification  → award-xp, leaderboard, xp-history
+#   /api/v1/users         → /users/me/achievements
+app.include_router(gamification.router,  prefix="/api/v1/gamification", tags=["gamification"])
+app.include_router(gamification.router,  prefix="/api/v1/users",        tags=["gamification"])
 app.include_router(oracle.router,        prefix="/api/v1/oracle",       tags=["oracle"])
 app.include_router(progress.router,      prefix="/api/v1",              tags=["progress"])
 app.include_router(simulations.router,   prefix="/api/v1/simulaciones", tags=["simulaciones"])

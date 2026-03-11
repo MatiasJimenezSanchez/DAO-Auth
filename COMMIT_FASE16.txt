@@ -1,0 +1,9 @@
+feat(gamification): motor de experiencia, niveles y leaderboard (Fase 16)
+
+RESUMEN ARQUITECTÓNICO:
+Se implementó el motor de gamificación con lógica RPG estandarizada.
+- Funciones puras para cálculo matemático de umbrales de XP a Nivel.
+- Endpoint de `award-xp` transaccional (actualiza usuario y registra historial).
+- Leaderboard público paginado y optimizado.
+- Historial de XP con desempate LIFO (created_at DESC, id DESC) para evitar colisiones en milisegundos.
+- 100% de cobertura en pruebas unitarias e integración (38/38 tests).

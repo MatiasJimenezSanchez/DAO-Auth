@@ -1,19 +1,18 @@
 """
-Gamification Schemas - Pydantic V2
-Validación para modelos de Fase 9
+app/schemas/gamification.py — Schemas de Gamificación (Fase 16)
+Mantiene todos los schemas existentes + agrega los de Fase 16.
 """
 from pydantic import BaseModel, Field, ConfigDict
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 from decimal import Decimal
 
 
-# ============================================
-# PROGRESO Y ECONOMÍA
-# ============================================
+# =============================================================================
+# PROGRESO Y ECONOMÍA (existentes)
+# =============================================================================
 
 class UserModuleOut(BaseModel):
-    """Schema de salida para progreso en módulos"""
     id: int
     user_id: int
     module_id: int
@@ -21,12 +20,10 @@ class UserModuleOut(BaseModel):
     porcentaje_completado: Decimal = Field(ge=0, le=100)
     tiempo_dedicado_minutos: int = Field(ge=0)
     fecha_inicio: datetime
-    
     model_config = ConfigDict(from_attributes=True)
 
 
 class TaskSkillCreate(BaseModel):
-    """Schema para crear asociación tarea-skill"""
     task_id: int
     skill_id: int
     xp_ganado: int = Field(default=10, ge=0)
@@ -34,27 +31,23 @@ class TaskSkillCreate(BaseModel):
 
 
 class TaskSkillOut(BaseModel):
-    """Schema de salida para habilidades de tarea"""
     id: int
     task_id: int
     skill_id: int
     xp_ganado: int
     peso: Decimal
-    
     model_config = ConfigDict(from_attributes=True)
 
 
 class XPTransactionCreate(BaseModel):
-    """Schema para crear transacción XP"""
     user_id: int
-    cantidad_xp: int  # Puede ser negativo
+    cantidad_xp: int
     tipo_fuente: str = Field(pattern="^(tarea|logro|mision|bonus|penalizacion)$")
     fuente_id: Optional[int] = None
     descripcion: str = Field(min_length=1, max_length=500)
 
 
 class XPTransactionOut(BaseModel):
-    """Schema de salida para transacciones XP"""
     id: int
     user_id: int
     cantidad_xp: int
@@ -63,16 +56,10 @@ class XPTransactionOut(BaseModel):
     xp_anterior: int
     xp_nuevo: int
     created_at: datetime
-    
     model_config = ConfigDict(from_attributes=True)
 
 
-# ============================================
-# GAMIFICACIÓN
-# ============================================
-
 class AchievementCreate(BaseModel):
-    """Schema para crear logro"""
     titulo: str = Field(min_length=1, max_length=200)
     descripcion: str = Field(min_length=1)
     tipo_logro: str = Field(pattern="^(bronce|plata|oro|platino)$")
@@ -80,30 +67,25 @@ class AchievementCreate(BaseModel):
 
 
 class AchievementOut(BaseModel):
-    """Schema de salida para logros"""
     id: int
     titulo: str
     descripcion: str
     tipo_logro: str
     recompensa_xp: int
     is_active: bool
-    
     model_config = ConfigDict(from_attributes=True)
 
 
 class UserAchievementOut(BaseModel):
-    """Schema de salida para logros de usuario"""
     id: int
     user_id: int
     logro_id: int
     desbloqueado: bool
     fecha_desbloqueo: datetime
-    
     model_config = ConfigDict(from_attributes=True)
 
 
 class MissionCreate(BaseModel):
-    """Schema para crear misión"""
     titulo: str = Field(min_length=1, max_length=200)
     descripcion: str = Field(min_length=1)
     objetivo_tipo: str = Field(min_length=1, max_length=100)
@@ -112,7 +94,6 @@ class MissionCreate(BaseModel):
 
 
 class MissionOut(BaseModel):
-    """Schema de salida para misiones"""
     id: int
     titulo: str
     descripcion: str
@@ -120,28 +101,20 @@ class MissionOut(BaseModel):
     objetivo_cantidad: int
     recompensa_xp: int
     is_active: bool
-    
     model_config = ConfigDict(from_attributes=True)
 
 
 class UserMissionOut(BaseModel):
-    """Schema de salida para progreso en misiones"""
     id: int
     user_id: int
     mision_id: int
     progreso_actual: int
     estado: str
     fecha_inicio: datetime
-    
     model_config = ConfigDict(from_attributes=True)
 
 
-# ============================================
-# MENTORES IA
-# ============================================
-
 class VirtualMentorCreate(BaseModel):
-    """Schema para crear mentor virtual"""
     empresa_id: int
     nombre: str = Field(min_length=1, max_length=200)
     personalidad: str = Field(default="profesional")
@@ -150,50 +123,87 @@ class VirtualMentorCreate(BaseModel):
 
 
 class VirtualMentorOut(BaseModel):
-    """Schema de salida para mentores virtuales"""
     id: int
     empresa_id: int
     nombre: str
     personalidad: str
     modelo_ia: str
     is_active: bool
-    
     model_config = ConfigDict(from_attributes=True)
 
 
 class MentorMessageCreate(BaseModel):
-    """Schema para crear mensaje de mentor"""
     conversacion_id: int
     rol: str = Field(pattern="^(user|assistant|system)$")
     contenido: str = Field(min_length=1)
 
 
 class MentorMessageOut(BaseModel):
-    """Schema de salida para mensajes de mentor"""
     id: int
     conversacion_id: int
     rol: str
     contenido: str
     tokens_usados: int
     created_at: datetime
-    
     model_config = ConfigDict(from_attributes=True)
 
 
 class OracleMessageCreate(BaseModel):
-    """Schema para crear mensaje de oráculo"""
     sesion_id: int
     rol: str = Field(pattern="^(user|assistant|system)$")
     contenido: str = Field(min_length=1)
 
 
 class OracleMessageOut(BaseModel):
-    """Schema de salida para mensajes de oráculo"""
     id: int
     sesion_id: int
     rol: str
     contenido: str
     tokens_usados: int
     created_at: datetime
-    
     model_config = ConfigDict(from_attributes=True)
+
+
+# =============================================================================
+# FASE 16 — NUEVOS SCHEMAS
+# =============================================================================
+
+class AwardXPRequest(BaseModel):
+    """Body para POST /gamification/award-xp"""
+    user_id: int = Field(..., gt=0)
+    cantidad_xp: int = Field(..., gt=0, description="XP a otorgar (debe ser positivo)")
+    tipo_fuente: str = Field(
+        default="bonus",
+        pattern="^(tarea|logro|mision|bonus|penalizacion)$",
+    )
+    fuente_id: Optional[int] = Field(None, description="ID de la tarea/logro/misión origen")
+    descripcion: str = Field(..., min_length=1, max_length=500)
+
+
+class AwardXPResponse(BaseModel):
+    """Respuesta de otorgamiento de XP con info de nivel."""
+    transaction: XPTransactionOut
+    xp_anterior: int
+    xp_nuevo: int
+    nivel_anterior: int
+    nivel_nuevo: int
+    subio_de_nivel: bool
+    xp_para_siguiente_nivel: int
+
+
+class LeaderboardEntry(BaseModel):
+    """Entrada en el leaderboard."""
+    rank: int
+    user_id: int
+    username: str
+    full_name: str
+    xp_total: int
+    level_current: int
+    avatar_url: Optional[str] = None
+    model_config = ConfigDict(from_attributes=True)
+
+
+class LeaderboardResponse(BaseModel):
+    """Respuesta del leaderboard con paginación."""
+    total: int
+    entries: List[LeaderboardEntry]
