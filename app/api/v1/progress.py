@@ -1,170 +1,44 @@
 """
-Progress API Endpoints
-Track user progress through simulations
+app/api/v1/progress.py — Rutas de progreso de usuario (Fase 15)
+Delega toda la lógica a ProgressService.
 """
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
-from typing import List
-from datetime import datetime
+from typing import List, Optional
 
 from app.db.session import get_db
-from app.models.user_progress import UserSimulationProgress, ProgressStatus
+from app.api.deps import get_current_active_user
 from app.models.user import User
-from app.models.simulations import Simulation
-from app.schemas.progress import EnrollmentCreate, TaskSubmission, UserProgressOut
-from app.api.deps import get_current_user
+from app.schemas.progress import UserSimulationOut, TaskSubmission
+from app.services.progress_service import ProgressService
 
 router = APIRouter()
 
 
-@router.post("/progress/start", response_model=UserProgressOut, status_code=status.HTTP_201_CREATED)
-def start_simulation(
-    progress_data: EnrollmentCreate,
+@router.get("/users/me/simulations", response_model=List[UserSimulationOut])
+def get_my_simulations(
+    estado: Optional[str] = Query(None, description="Filtrar por estado: inscrito, en_progreso, completado"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_active_user),
 ):
-    """
-    Start a simulation
-    Creates progress record with status='started'
-    """
-    # Authorization: users can only start for themselves
-    if current_user.id != progress_data.user_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You can only start simulations for yourself"
-        )
-    
-    # Check if simulation exists
-    simulation = db.query(Simulation).filter(
-        Simulation.id == progress_data.simulation_id
-    ).first()
-    
-    if not simulation:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Simulation {progress_data.simulation_id} not found"
-        )
-    
-    # Check if already started
-    existing = db.query(UserSimulationProgress).filter(
-        UserSimulationProgress.user_id == progress_data.user_id,
-        UserSimulationProgress.simulation_id == progress_data.simulation_id
-    ).first()
-    
-    if existing:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Simulation already started"
-        )
-    
-    # Create progress
-    db_progress = UserSimulationProgress(
-        user_id=progress_data.user_id,
-        simulation_id=progress_data.simulation_id,
-        status=ProgressStatus.STARTED,
-        started_at=datetime.utcnow(),
-        last_activity_at=datetime.utcnow()
+    """Lista las simulaciones en las que el usuario autenticado está inscrito."""
+    service = ProgressService(db)
+    return service.list_user_simulations(current_user.id, estado, skip, limit)
+
+
+@router.post("/tasks/submit", response_model=dict, status_code=status.HTTP_201_CREATED)
+def submit_task(
+    submission: TaskSubmission,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """Registra la respuesta de una tarea para el usuario autenticado."""
+    service = ProgressService(db)
+    user_task = service.submit_task(
+        current_user.id,
+        submission.task_id,
+        submission.respuesta_texto,
     )
-    
-    db.add(db_progress)
-    db.commit()
-    db.refresh(db_progress)
-    
-    return db_progress
-
-
-@router.get("/progress/user/{user_id}", response_model=List[UserProgressOut])
-def get_user_progress(
-    user_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """
-    Get all progress records for a user
-    """
-    # Authorization: users can only view their own progress
-    if current_user.id != user_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You can only view your own progress"
-        )
-    
-    progress_records = db.query(UserSimulationProgress).filter(
-        UserSimulationProgress.user_id == user_id
-    ).all()
-    
-    return progress_records
-
-
-@router.patch("/progress/{progress_id}", response_model=UserProgressOut)
-def update_progress(
-    progress_id: int,
-    progress_data: TaskSubmission,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """
-    Update progress record
-    """
-    progress = db.query(UserSimulationProgress).filter(
-        UserSimulationProgress.id == progress_id
-    ).first()
-    
-    if not progress:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Progress record {progress_id} not found"
-        )
-    
-    # Authorization
-    if current_user.id != progress.user_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You can only update your own progress"
-        )
-    
-    # Update fields
-    update_data = progress_data.model_dump(exclude_unset=True)
-    
-    for field, value in update_data.items():
-        setattr(progress, field, value)
-    
-    # Auto-update timestamps
-    progress.last_activity_at = datetime.utcnow()
-    
-    if progress_data.status == "completed" and not progress.completed_at:
-        progress.completed_at = datetime.utcnow()
-        progress.completion_percentage = 100.0
-    
-    db.commit()
-    db.refresh(progress)
-    
-    return progress
-
-
-@router.get("/progress/{progress_id}", response_model=UserProgressOut)
-def get_progress(
-    progress_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Get specific progress record"""
-    progress = db.query(UserSimulationProgress).filter(
-        UserSimulationProgress.id == progress_id
-    ).first()
-    
-    if not progress:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Progress record {progress_id} not found"
-        )
-    
-    # Authorization
-    if current_user.id != progress.user_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You can only view your own progress"
-        )
-    
-    return progress
-
+    return {"status": "submitted", "task_id": user_task.task_id, "estado": user_task.estado}
