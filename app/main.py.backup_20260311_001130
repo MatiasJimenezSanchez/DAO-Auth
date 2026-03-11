@@ -1,6 +1,6 @@
 """
 Delphos API - main.py
-Fase 18: Mentores Virtuales de IA
+Fase 16: Gamificación
 """
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -29,7 +29,6 @@ import app.models.infrastructure
 # IMPORTAR ROUTERS (orden alfabético)
 # =============================================================================
 from app.api.v1 import (
-    ai,
     auth,
     b2b,
     catalogs,
@@ -55,8 +54,8 @@ class Token(BaseModel):
 
 app = FastAPI(
     title="Delphos API",
-    version="1.8.0",
-    description="Backend para simulaciones educativas empresariales - Fase 18: Mentores Virtuales de IA",
+    version="1.6.0",
+    description="Backend para simulaciones educativas empresariales - Fase 16: Gamificación",
 )
 
 
@@ -64,21 +63,23 @@ app = FastAPI(
 def root():
     return {
         "status": "online",
-        "message": "Delphos API v1.8.0",
-        "phase": "18 - Mentores Virtuales de IA",
+        "message": "Delphos API v1.6.0",
+        "phase": "16 - Motor de Gamificación",
     }
 
 
 # =============================================================================
 # REGISTRO DE ROUTERS (orden alfabético)
 # =============================================================================
-app.include_router(ai.router,            prefix="/api/v1/ai",           tags=["ai"])
 app.include_router(auth.router,          prefix="/api/v1",              tags=["auth"])
 app.include_router(b2b.router,           prefix="/api/v1/b2b",          tags=["b2b"])
 app.include_router(catalogs.router,      prefix="/api/v1",              tags=["catalogs"])
 app.include_router(company_users.router, prefix="/api/v1",              tags=["company-users"])
 app.include_router(content.router,       prefix="/api/v1",              tags=["content"])
 app.include_router(empresas.router,      prefix="/api/v1/empresas",     tags=["empresas"])
+# Gamification — dos prefijos:
+#   /api/v1/gamification  → award-xp, leaderboard, xp-history
+#   /api/v1/users         → /users/me/achievements
 app.include_router(gamification.router,  prefix="/api/v1/gamification", tags=["gamification"])
 app.include_router(gamification.router,  prefix="/api/v1/users",        tags=["gamification"])
 app.include_router(oracle.router,        prefix="/api/v1/oracle",       tags=["oracle"])

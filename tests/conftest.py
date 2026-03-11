@@ -106,6 +106,27 @@ def _seed_base_data(session):
     session.flush()
 
     _seed_oracle(session)
+    _seed_virtual_mentor(session, empresa.id)
+
+
+def _seed_virtual_mentor(session, empresa_id: int):
+    """Seed de mentor virtual para tests de IA"""
+    try:
+        from app.models.gamification import VirtualMentor
+        mentor = VirtualMentor(
+            empresa_id=empresa_id,
+            nombre="Mentor de Prueba IA",
+            titulo="Senior AI Coach",
+            bio="Mentor virtual para testing de conversaciones IA",
+            personalidad="profesional",
+            prompt_sistema="Eres un mentor profesional y amigable.",
+            modelo_ia="gpt-4",
+            is_active=True
+        )
+        session.add(mentor)
+        session.flush()
+    except Exception as e:
+        print(f"Error seeding mentor: {e}")
 
 def _seed_oracle(session):
     try:
