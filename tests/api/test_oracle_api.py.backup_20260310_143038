@@ -1,0 +1,88 @@
+"""
+Tests para Oracle API - El Oráculo (Test Vocacional)
+"""
+import pytest
+from fastapi import status
+
+
+class TestOracleFlow:
+    """Flujo completo del test vocacional"""
+
+    def test_start_session(self, client, auth_headers):
+        """Test: Iniciar sesión del Oráculo"""
+        res = client.post("/api/v1/oracle/sessions", headers=auth_headers)
+        assert res.status_code == status.HTTP_201_CREATED
+        
+        data = res.json()
+        assert "id" in data
+        assert data["estado"] == "iniciada"
+        assert data["paso_actual"] == 1
+
+    def test_cannot_start_multiple_sessions(self, client, auth_headers):
+        """Test: No se pueden tener múltiples sesiones activas"""
+        # Primera sesión
+        res1 = client.post("/api/v1/oracle/sessions", headers=auth_headers)
+        assert res1.status_code == status.HTTP_201_CREATED
+        
+        # Intentar segunda sesión
+        res2 = client.post("/api/v1/oracle/sessions", headers=auth_headers)
+        assert res2.status_code == status.HTTP_400_BAD_REQUEST
+        assert "sesión activa" in res2.json()["detail"].lower()
+
+    def test_get_questions(self, client, auth_headers):
+        """Test: Obtener preguntas para responder"""
+        # Crear sesión
+        session_res = client.post("/api/v1/oracle/sessions", headers=auth_headers)
+        session_id = session_res.json()["id"]
+        
+        # Obtener preguntas
+        res = client.get(f"/api/v1/oracle/sessions/{session_id}/questions", headers=auth_headers)
+        assert res.status_code == status.HTTP_200_OK
+        
+        questions = res.json()
+        assert isinstance(questions, list)
+
+    def test_submit_answer_requires_auth(self, client):
+        """Test: Enviar respuesta requiere autenticación"""
+        res = client.post("/api/v1/oracle/sessions/1/answers", json={
+            "pregunta_id": 1,
+            "opcion_id": 1
+        })
+        assert res.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+class TestOracleValidations:
+    """Validaciones del Oráculo"""
+
+    def test_cannot_access_other_user_session(self, client, auth_headers, db_session):
+        """Test: No se puede acceder a sesión de otro usuario"""
+        from app.models.user import User
+        from app.models.oracle import OracleSession
+        
+        # Crear otro usuario
+        other_user = User(
+            username="otheruser",
+            email="other@test.com",
+            hashed_password="hash",
+            full_name="Other User",
+            is_active=True
+        )
+        db_session.add(other_user)
+        db_session.commit()
+        db_session.refresh(other_user)
+        
+        # Crear sesión para el otro usuario
+        other_session = OracleSession(
+            usuario_id=other_user.id,
+            estado="iniciada"
+        )
+        db_session.add(other_session)
+        db_session.commit()
+        db_session.refresh(other_session)
+        
+        # Intentar acceder con usuario autenticado actual
+        res = client.get(
+            f"/api/v1/oracle/sessions/{other_session.id}/questions",
+            headers=auth_headers
+        )
+        assert res.status_code == status.HTTP_404_NOT_FOUND

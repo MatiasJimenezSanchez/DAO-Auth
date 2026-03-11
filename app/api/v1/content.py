@@ -25,6 +25,12 @@ router = APIRouter()
 def create_module(module: ModuleCreate, db: Session = Depends(get_db)):
     """Create new module"""
     try:
+        # --- FIX MANUAL FK: Validar que Simulation exista ---
+        from app.models.simulations import Simulation
+        sim = db.query(Simulation).filter(Simulation.id == module.simulation_id).first()
+        if not sim:
+            raise HTTPException(status_code=404, detail="Simulation not found")
+        
         db_module = SimulationModule(**module.model_dump())
         db.add(db_module)
         db.commit()
@@ -117,6 +123,11 @@ def create_task(task: TaskCreate, db: Session = Depends(get_db)):
     """Create new task (Fix: Maps 'type' -> 'task_type')"""
     try:
         # MAPEO MANUAL: Pydantic 'type' -> SQLAlchemy 'task_type'
+        # --- FIX MANUAL FK: Validar que Module exista ---
+        mod = db.query(SimulationModule).filter(SimulationModule.id == task.module_id).first()
+        if not mod:
+            raise HTTPException(status_code=404, detail="Module not found")
+        
         task_data = task.model_dump()
         if 'type' in task_data:
             task_data['task_type'] = task_data.pop('type')
@@ -239,6 +250,11 @@ def delete_task(task_id: int, db: Session = Depends(get_db)):
 def create_resource(resource: ResourceCreate, db: Session = Depends(get_db)):
     """Create new resource"""
     try:
+        # --- FIX MANUAL FK: Validar que Task exista ---
+        tsk = db.query(ModuleTask).filter(ModuleTask.id == resource.task_id).first()
+        if not tsk:
+            raise HTTPException(status_code=404, detail="Task not found")
+        
         db_resource = TaskResource(
             name=resource.title,
             **resource.model_dump(exclude={"title"})
@@ -299,3 +315,4 @@ def delete_resource(resource_id: int, db: Session = Depends(get_db)):
     db.delete(resource)
     db.commit()
     return None
+

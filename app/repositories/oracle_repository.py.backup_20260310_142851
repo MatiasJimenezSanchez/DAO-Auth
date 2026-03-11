@@ -1,0 +1,152 @@
+"""
+Oracle Repository - Data Access Layer para El Oráculo
+Maneja sesiones, preguntas, respuestas y arquetipos
+"""
+from typing import List, Optional, Dict
+from sqlalchemy.orm import Session
+from sqlalchemy import func
+from app.repositories.base_repository import BaseRepository
+from app.models.oracle import (
+    OracleSession, 
+    OracleQuestion, 
+    QuestionOption, 
+    UserOracleAnswer,
+    Archetype
+)
+
+
+class OracleRepository(BaseRepository):
+    """Repositorio para gestión de sesiones del Oráculo"""
+
+    # ==================== SESSIONS ====================
+    
+    def create_session(self, db: Session, user_id: int) -> OracleSession:
+        """Crear nueva sesión de Oráculo para un usuario"""
+        session = OracleSession(
+            usuario_id=user_id,
+            estado="iniciada",
+            paso_actual=1,
+            inferred_skills={}
+        )
+        db.add(session)
+        db.commit()
+        db.refresh(session)
+        return session
+    
+    def get_session_by_id(self, db: Session, session_id: int) -> Optional[OracleSession]:
+        """Obtener sesión por ID"""
+        return db.query(OracleSession).filter(OracleSession.id == session_id).first()
+    
+    def get_user_sessions(self, db: Session, user_id: int) -> List[OracleSession]:
+        """Obtener todas las sesiones de un usuario"""
+        return db.query(OracleSession).filter(
+            OracleSession.usuario_id == user_id
+        ).order_by(OracleSession.iniciado_en.desc()).all()
+    
+    def update_session_state(
+        self, 
+        db: Session, 
+        session_id: int, 
+        estado: str,
+        paso_actual: Optional[int] = None,
+        inferred_skills: Optional[Dict] = None
+    ) -> OracleSession:
+        """Actualizar estado de sesión"""
+        session = self.get_session_by_id(db, session_id)
+        if not session:
+            return None
+        
+        session.estado = estado
+        if paso_actual is not None:
+            session.paso_actual = paso_actual
+        if inferred_skills is not None:
+            session.inferred_skills = inferred_skills
+        
+        db.commit()
+        db.refresh(session)
+        return session
+    
+    # ==================== QUESTIONS ====================
+    
+    def get_all_active_questions(self, db: Session) -> List[OracleQuestion]:
+        """Obtener todas las preguntas activas ordenadas"""
+        return db.query(OracleQuestion).filter(
+            OracleQuestion.esta_activo == True
+        ).order_by(OracleQuestion.orden).all()
+    
+    def get_question_by_id(self, db: Session, question_id: int) -> Optional[OracleQuestion]:
+        """Obtener pregunta por ID con opciones"""
+        return db.query(OracleQuestion).filter(
+            OracleQuestion.id == question_id
+        ).first()
+    
+    def get_question_options(self, db: Session, question_id: int) -> List[QuestionOption]:
+        """Obtener opciones de una pregunta"""
+        return db.query(QuestionOption).filter(
+            QuestionOption.pregunta_id == question_id
+        ).order_by(QuestionOption.orden).all()
+    
+    # ==================== ANSWERS ====================
+    
+    def save_user_answer(
+        self, 
+        db: Session, 
+        session_id: int, 
+        question_id: int, 
+        option_id: int,
+        tiempo_respuesta: Optional[int] = None
+    ) -> UserOracleAnswer:
+        """Guardar respuesta del usuario"""
+        answer = UserOracleAnswer(
+            sesion_id=session_id,
+            pregunta_id=question_id,
+            opcion_id=option_id,
+            tiempo_respuesta_segundos=tiempo_respuesta
+        )
+        db.add(answer)
+        db.commit()
+        db.refresh(answer)
+        return answer
+    
+    def get_session_answers(self, db: Session, session_id: int) -> List[UserOracleAnswer]:
+        """Obtener todas las respuestas de una sesión"""
+        return db.query(UserOracleAnswer).filter(
+            UserOracleAnswer.sesion_id == session_id
+        ).all()
+    
+    def get_option_by_id(self, db: Session, option_id: int) -> Optional[QuestionOption]:
+        """Obtener opción por ID"""
+        return db.query(QuestionOption).filter(
+            QuestionOption.id == option_id
+        ).first()
+    
+    # ==================== ARCHETYPES ====================
+    
+    def get_all_archetypes(self, db: Session) -> List[Archetype]:
+        """Obtener todos los arquetipos activos"""
+        return db.query(Archetype).filter(
+            Archetype.esta_activo == True
+        ).all()
+    
+    def get_archetype_by_id(self, db: Session, archetype_id: int) -> Optional[Archetype]:
+        """Obtener arquetipo por ID"""
+        return db.query(Archetype).filter(Archetype.id == archetype_id).first()
+    
+    def assign_archetype_to_session(
+        self, 
+        db: Session, 
+        session_id: int, 
+        archetype_id: int
+    ) -> OracleSession:
+        """Asignar arquetipo resultante a sesión"""
+        session = self.get_session_by_id(db, session_id)
+        if not session:
+            return None
+        
+        session.arquetipo_resultante_id = archetype_id
+        session.estado = "completada"
+        session.completado_en = func.now()
+        
+        db.commit()
+        db.refresh(session)
+        return session
