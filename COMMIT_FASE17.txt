@@ -1,0 +1,7 @@
+feat(b2b): dashboard analítico para empresas (Fase 17)
+
+RESUMEN ARQUITECTÓNICO:
+Se implementó el portal analítico B2B para que las empresas clientes puedan monitorear el rendimiento de las simulaciones.
+- `B2BService`: Cálculos de agregación (porcentaje de completitud, total de inscritos, simulaciones activas) usando SQLAlchemy.
+- Router protegido con validación de membresía cruzando la tabla `usuarios_empresa`.
+- Cobertura de pruebas E2E verificando el control de acceso (RBAC).

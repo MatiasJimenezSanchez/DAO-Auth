@@ -30,6 +30,7 @@ import app.models.infrastructure
 # =============================================================================
 from app.api.v1 import (
     auth,
+    b2b,
     catalogs,
     company_users,
     content,
@@ -71,6 +72,7 @@ def root():
 # REGISTRO DE ROUTERS (orden alfabético)
 # =============================================================================
 app.include_router(auth.router,          prefix="/api/v1",              tags=["auth"])
+app.include_router(b2b.router,           prefix="/api/v1/b2b",          tags=["b2b"])
 app.include_router(catalogs.router,      prefix="/api/v1",              tags=["catalogs"])
 app.include_router(company_users.router, prefix="/api/v1",              tags=["company-users"])
 app.include_router(content.router,       prefix="/api/v1",              tags=["content"])
