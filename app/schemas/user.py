@@ -4,6 +4,7 @@ from datetime import datetime, date
 
 class Token(BaseModel):
     access_token: str
+    refresh_token: str
     token_type: str
 
 class TokenData(BaseModel):
@@ -53,3 +54,7 @@ class UserOut(UserBase):
 
 class UserInDB(UserOut):
     hashed_password: str
+
+
+class TokenRefresh(BaseModel):
+    refresh_token: str

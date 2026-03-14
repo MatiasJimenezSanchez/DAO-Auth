@@ -8,9 +8,9 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_db, get_current_active_user
 from app.models.user import User
-from app.schemas.user import Token, UserCreate, UserOut
+from app.schemas.user import Token, TokenRefresh, UserCreate, UserOut
 from app.services.user_service import UserService
-from app.core.security import create_access_token
+from app.core.security import create_access_token, create_refresh_token
 
 router = APIRouter()
 
@@ -46,7 +46,12 @@ def login_for_access_token(
         )
     
     access_token = create_access_token(data={"sub": user.username})
-    return {"access_token": access_token, "token_type": "bearer"}
+    refresh_token = create_refresh_token(subject=user.email)
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer"
+    }
 
 
 @router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
@@ -89,3 +94,46 @@ def read_current_user(
         UserOut: Current user profile
     """
     return current_user
+
+
+@router.post("/refresh", response_model=Token)
+def refresh_token(
+    request: TokenRefresh,
+    db: Session = Depends(get_db)
+):
+    """
+    Obtiene un nuevo Access Token enviando un Refresh Token válido.
+    """
+    from jose import jwt, JWTError
+    from app.core.security import SECRET_KEY, ALGORITHM, create_access_token, create_refresh_token
+    from fastapi import HTTPException, status
+    from app.models.user import User
+    
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials or token expired",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
+    try:
+        payload = jwt.decode(request.refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+        # Verificar que efectivamente sea un refresh token
+        if email is None or payload.get("type") != "refresh":
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+        
+    user = db.query(User).filter(User.email == email).first()
+    if not user or not user.is_active:
+        raise credentials_exception
+        
+    # Generar nuevo par de tokens
+    new_access_token = create_access_token(subject=user.email)
+    new_refresh_token = create_refresh_token(subject=user.email)
+    
+    return {
+        "access_token": new_access_token,
+        "refresh_token": new_refresh_token,
+        "token_type": "bearer"
+    }

@@ -50,6 +50,7 @@ from app.db.session import get_db
 
 class Token(BaseModel):
     access_token: str
+    refresh_token: str
     token_type: str
 
 
@@ -87,3 +88,7 @@ app.include_router(simulations.router,   prefix="/api/v1/simulaciones", tags=["s
 app.include_router(skills.router,        prefix="/api/v1/skills",       tags=["skills"])
 app.include_router(universities.router,  prefix="/api/v1/universities", tags=["universities"])
 app.include_router(users.router,         prefix="/api/v1/users",        tags=["users"])
+
+
+class TokenRefresh(BaseModel):
+    refresh_token: str
