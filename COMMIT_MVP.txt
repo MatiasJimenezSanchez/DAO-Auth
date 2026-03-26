@@ -1,0 +1,40 @@
+feat(api): endpoints mvp e hiper-seeder (coursera + reddit)
+
+=====================================================
+🚀 GUÍA DE INTEGRACIÓN FRONTEND - CAMPUS DELPHOS MVP
+=====================================================
+Hola equipo de Frontend (Alexander y co.) 👋. 
+El backend acaba de subir de nivel. Hemos inyectado una arquitectura de datos masiva diseñada para impresionar a inversionistas (Efecto Coursera para educación + Efecto Reddit para comunidad). 
+
+Aquí tienen la guía exacta de cómo conectar el diseño de la UI a la API real:
+
+🔑 1. AUTENTICACIÓN Y TOKEN
+Para ver estos datos, primero deben obtener un token de acceso:
+- Endpoint: `POST /api/v1/login/access-token`
+- Email de prueba (Admin/Tester): alexander.lopez@delphos.com
+- Password: Campus2026!
+> Inyecten el `access_token` en los headers de sus peticiones (Authorization: Bearer <token>).
+
+🎓 2. BIBLIOTECA DE MISIONES (El Catálogo)
+- Endpoint: `GET /api/v1/missions`
+- Qué hace: Devuelve la lista completa de simulaciones.
+- Cómo usarlo: Pinten las tarjetas principales. Cada tarjeta trae `title`, `difficulty_level`, `estimated_hours`, `xp` y si es `is_premium`. Filtren por categorías en el front.
+
+🔍 3. DETALLE PROFUNDO DE MISIÓN (Efecto Coursera)
+- Endpoint: `GET /api/v1/missions/{slug}`
+- Ejemplo: `/api/v1/missions/bootcamp-ai-engineer` o `/api/v1/missions/arquitecto-cloud-aws`
+- Qué hace: Devuelve el interior de la misión.
+- Cómo usarlo: Cuando el usuario hace clic en "Ver Misión". El JSON trae una lista anidada de `modules` (Módulo 1, Módulo 2), y cada módulo trae `tasks` (Videos de 45 min, Peer Reviews, Labs). ¡Úsenlo para renderizar el temario!
+
+💬 4. COMUNIDAD Y CHAT (Efecto Reddit/Discord)
+A. La Barra Lateral (Canales):
+- Endpoint: `GET /api/v1/community/channels`
+- Rendericen la lista de foros: #ofertas-laborales, #entrevistas-tech, #ia-y-llms. (Guarden el `id` de cada canal).
+
+B. El Chat en Vivo:
+- Endpoint: `GET /api/v1/community/{channel_id}/messages`
+- Ejemplo: Pásenle el ID del canal de entrevistas.
+- Qué hace: Devuelve un array de mensajes reales. Verán hilos de discusión sobre pruebas técnicas en Mercado Libre, debates sobre LLMs y portafolios en GitHub. Rendericen esto como burbujas de chat.
+
+🛠️ NOTA TÉCNICA:
+Todos los datos de la BD están blindados. Si necesitan más datos o limpiar la BD, avisen al backend. ¡A romperla con esa UI! 🚀
