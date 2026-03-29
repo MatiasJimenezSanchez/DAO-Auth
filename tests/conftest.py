@@ -180,13 +180,13 @@ def test_user(db_session):
 @pytest.fixture(scope="function")
 def auth_headers(test_user):
     from app.core.security import create_access_token
-    token = create_access_token(data={"sub": test_user.username})
+    token = create_access_token(data={"sub": test_user.email})
     return {"Authorization": f"Bearer {token}"}
 
 @pytest.fixture(scope="function")
 def auth_header(test_user):
     from app.core.security import create_access_token
-    token = create_access_token(data={"sub": test_user.username})
+    token = create_access_token(data={"sub": test_user.email})
     return {"Authorization": f"Bearer {token}"}
 
 @pytest.fixture(scope="function")

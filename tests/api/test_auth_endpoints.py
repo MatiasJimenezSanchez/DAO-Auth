@@ -120,7 +120,7 @@ class TestAuthentication:
         response = client.post(
             "/api/v1/token",
             data={
-                "username": VALID_USER_DATA["username"],
+                "username": VALID_USER_DATA["email"],
                 "password": VALID_USER_DATA["password"]
             }
         )
@@ -152,7 +152,7 @@ class TestAuthentication:
         response = client.post(
             "/api/v1/token",
             data={
-                "username": VALID_USER_DATA["username"],
+                "username": VALID_USER_DATA["email"],
                 "password": "WrongPassword123!"
             }
         )
@@ -200,7 +200,7 @@ class TestProtectedRoutes:
         login_response = client.post(
             "/api/v1/token",
             data={
-                "username": VALID_USER_DATA["username"],
+                "username": VALID_USER_DATA["email"],
                 "password": VALID_USER_DATA["password"]
             }
         )
@@ -232,7 +232,7 @@ class TestUserCRUD:
         login_response = client.post(
             "/api/v1/token",
             data={
-                "username": VALID_USER_DATA["username"],
+                "username": VALID_USER_DATA["email"],
                 "password": VALID_USER_DATA["password"]
             }
         )
@@ -264,7 +264,7 @@ class TestUserCRUD:
         login_response = client.post(
             "/api/v1/token",
             data={
-                "username": VALID_USER_DATA["username"],
+                "username": VALID_USER_DATA["email"],
                 "password": VALID_USER_DATA["password"]
             }
         )
@@ -290,7 +290,7 @@ class TestUserCRUD:
         login_response = client.post(
             "/api/v1/token",
             data={
-                "username": VALID_USER_DATA["username"],
+                "username": VALID_USER_DATA["email"],
                 "password": VALID_USER_DATA["password"]
             }
         )
@@ -336,7 +336,7 @@ class TestSecurityEdgeCases:
         response = client.post(
             "/api/v1/token",
             data={
-                "username": VALID_USER_DATA["username"],
+                "username": VALID_USER_DATA["email"],
                 "password": VALID_USER_DATA["password"]
             }
         )

@@ -1,3 +1,4 @@
+from fastapi.middleware.cors import CORSMiddleware
 """
 Delphos API - main.py
 Fase 18: Mentores Virtuales de IA
@@ -92,3 +93,16 @@ app.include_router(users.router,         prefix="/api/v1/users",        tags=["u
 
 class TokenRefresh(BaseModel):
     refresh_token: str
+
+# Habilitar CORS para el Frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # En producción cambiar por ["http://localhost:5173", etc]
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.get("/health", tags=["Health"])
+def health_check():
+    return {"status": "ok", "message": "Campus Delphos API is alive!"}

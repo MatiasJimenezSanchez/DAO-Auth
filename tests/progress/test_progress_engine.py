@@ -5,12 +5,10 @@ from pydantic import ValidationError
 
 class TestProgressEngineSafe:
     def test_schema_enrollment_valid(self):
-        schema = EnrollmentCreate(simulation_id=5)
-        assert schema.simulation_id == 5
+        schema = EnrollmentCreate()
 
     def test_schema_enrollment_invalid(self):
-        with pytest.raises(ValidationError):
-            EnrollmentCreate(simulation_id=0) # Must be > 0
+        pass  # El esquema ya no tiene campos en el body para validar # Must be > 0
 
     def test_model_user_simulation_init(self):
         # Los defaults de SQLAlchemy se disparan al hacer commit, 

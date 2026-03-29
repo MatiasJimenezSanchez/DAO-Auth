@@ -300,7 +300,7 @@ class TestMySimulations:
         db_session.add(user2)
         db_session.commit()
         db_session.refresh(user2)
-        token2 = create_access_token(data={"sub": user2.username})
+        token2 = create_access_token(data={"sub": user2.email})
         headers2 = {"Authorization": f"Bearer {token2}"}
 
         sim = create_sim(client, empresa.id, cat.id, state="published")
@@ -321,7 +321,7 @@ class TestMySimulations:
         db_session.add(user1)
         db_session.commit()
         db_session.refresh(user1)
-        token1 = create_access_token(data={"sub": user1.username})
+        token1 = create_access_token(data={"sub": user1.email})
         headers1 = {"Authorization": f"Bearer {token1}"}
 
         res = client.get("/api/v1/users/me/simulations", headers=headers1)

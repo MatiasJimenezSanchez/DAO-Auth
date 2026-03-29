@@ -69,7 +69,7 @@ class TestUsersIDOR:
 
         login_res = client.post(
             "/api/v1/token",
-            data={"username": "user1", "password": "Password123!"}
+            data={"username": "user1@test.com", "password": "Password123!"}
         )
         assert login_res.status_code == 200, f"Login falló: {login_res.json()}"
         token = login_res.json()["access_token"]
@@ -101,7 +101,7 @@ class TestUsersIDOR:
 
         login_res = client.post(
             "/api/v1/token",
-            data={"username": "alice", "password": "Password123!"}
+            data={"username": "alice@test.com", "password": "Password123!"}
         )
         assert login_res.status_code == 200, f"Login falló: {login_res.json()}"
         token = login_res.json()["access_token"]

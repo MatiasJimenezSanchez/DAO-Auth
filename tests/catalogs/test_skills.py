@@ -16,7 +16,7 @@ class TestSkillsCRUD:
         
         # CRITICAL FIX: Password must be >= 8 chars (see app/schemas/user.py)
         user_data = {
-            "username": f"u_{uid}",
+            "username": f"e_{uid}@test.com",
             "email": f"e_{uid}@test.com",
             "password": "Password123!",  # FIXED: Was "Pwd" (too short)
             "full_name": "Tester"
@@ -36,7 +36,7 @@ class TestSkillsCRUD:
         
         # Step 2: Login
         login = client.post("/api/v1/token", data={
-            "username": user_data["username"],
+            "username": user_data["email"],
             "password": user_data["password"]
         })
         
