@@ -8,6 +8,7 @@ from app.db.session import SessionLocal
 from app.models.catalog import ContentCategory, SkillCatalog
 from app.models.simulations import Simulation, SimulationModule, ModuleTask
 from app.models.user import User
+from app.models.empresa import Empresa
 from app.models.oracle import Archetype
 from app.core.security import get_password_hash
 
@@ -65,6 +66,7 @@ def seed_master(db):
         get_or_create(db, SkillCatalog, "slug", slug, name=name, category=cat, is_active=True)
 
     # 3. MISIONES (CORTAS Y LARGAS)
+    default_company = get_or_create(db, Empresa, 'nombre_empresa', 'Delphos Academy', slug='delphos-academy', tipo_empresa='educacion', industria='Tecnología', pais='Global', esta_activo=True)
     missions = [
         ("bootcamp-ai", "Especialización: AI & LLMs", "ia", "advanced", 40.0),
         ("arquitecto-aws", "Certificación AWS", "cloud", "advanced", 60.0),
@@ -73,7 +75,7 @@ def seed_master(db):
     ]
     for slug, title, cat_slug, diff, horas in missions:
         if cat_slug not in cats_db: continue
-        sim = get_or_create(db, Simulation, "slug", slug, title=title, short_description=title, full_description="Contenido profundo.", category_id=cats_db[cat_slug], difficulty_level=diff, estimated_hours=horas, state="published", is_premium=True)
+        sim = get_or_create(db, Simulation, "slug", slug, title=title, short_description=title, full_description="Contenido profundo.", category_id=cats_db[cat_slug], company_id=default_company.id, difficulty_level=diff, estimated_hours=horas, state="published", is_premium=True)
         if not sim: continue
         
         # Módulos y tareas
