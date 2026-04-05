@@ -24,7 +24,7 @@ def create_full_simulation(db: Session):
     company = db.query(Empresa).filter(Empresa.slug == "tech-global").first()
     if not company:
         company = Empresa(
-            nombre_empresa="Tech Global Corp",
+            nombre_empresa="Tech Global Corp", industria="Tecnología", ciudad="San Francisco",
             slug="tech-global",
             tipo_empresa="real_internacional",
             pais="USA",
