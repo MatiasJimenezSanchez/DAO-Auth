@@ -1,0 +1,13 @@
+fix(core): resolver imports circulares y silenciar logs de healthcheck
+
+RESUMEN DE CIRUGÍA DE INFRAESTRUCTURA:
+
+🚨 1. Prevención de Colapsos (ImportError):
+- Se detectó y resolvió un bucle de importación circular crítico que causaba que Uvicorn se reiniciara y crasheara. 
+- La dependencia `get_current_user` ya no se importa desde los archivos de rutas (`auth.py`), sino directamente desde el archivo neutral `deps.py`. Esto limpia la cadena de dependencias en `skills.py`, `content.py` y `gamification.py`.
+
+🔊 2. Limpieza de Logs (Docker Healthcheck):
+- El contenedor de Docker estaba bombardeando los logs con errores `404 Not Found` cada 5 segundos porque buscaba la ruta `/health`.
+- Se inyectó el endpoint `@app.get("/health")` en `main.py` para responder `200 OK` al orquestador. Ahora los logs están 100% limpios y legibles para debugear la plataforma en paz.
+
+La API ahora es totalmente estable, silenciosa y está lista para que el equipo de IA conecte el LLM. 🚀

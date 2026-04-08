@@ -1,0 +1,38 @@
+{
+  "endpoint": "GET /api/v1/simulaciones/{slug}",
+  "description": "Estructura jerárquica estilo Coursera generada por el backend. El frontend debe iterar sobre 'modules' y luego sobre 'tasks'.",
+  "mock_response": {
+    "id": 1,
+    "title": "Especialización: AI & LLMs",
+    "slug": "bootcamp-ai",
+    "difficulty_level": "advanced",
+    "estimated_hours": 60.0,
+    "company": {
+      "nombre": "Delphos Academy",
+      "industria": "EdTech"
+    },
+    "modules": [
+      {
+        "id": 101,
+        "title": "Módulo 1: Fundamentos de Redes Neuronales",
+        "order": 1,
+        "tasks": [
+          {
+            "id": 501,
+            "title": "Intro a PyTorch",
+            "task_type": "video",
+            "estimated_minutes": 45,
+            "order": 1
+          },
+          {
+            "id": 502,
+            "title": "Lab: Tu primer modelo predictivo",
+            "task_type": "interactive",
+            "estimated_minutes": 120,
+            "order": 2
+          }
+        ]
+      }
+    ]
+  }
+}
